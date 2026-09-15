@@ -1,3 +1,4 @@
+import { normalizeDashes } from "@/modules/content/accent-text";
 import { Link } from "@/i18n/routing";
 
 import { CollectionFilters } from "./collection-filters";
@@ -71,7 +72,7 @@ export function CollectionPageView({
           </p>
         ) : null}
         <p style={{ color: "var(--espresso)", fontSize: "15px", lineHeight: 1.7 }}>
-          {collection.description}
+          {normalizeDashes(collection.description)}
         </p>
       </header>
 

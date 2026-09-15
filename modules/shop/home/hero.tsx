@@ -1,10 +1,60 @@
 import Image from "next/image";
 
 import { Link } from "@/i18n/routing";
-import { renderAccentText } from "@/modules/content/accent-text";
+import { normalizeDashes, renderAccentText } from "@/modules/content/accent-text";
 import type { HeroSlidePublic } from "@/modules/content/types";
 
 import { ImageSlotPlaceholder } from "./silhouette-svg";
+
+/** Two-line house lockup — keeps hierarchy without mid-frame stacking. */
+function HeroHeadline({
+  slideHeadline,
+  line1,
+  line2,
+}: {
+  slideHeadline: string | null | undefined;
+  line1: string;
+  line2: React.ReactNode;
+}) {
+  if (!slideHeadline?.trim()) {
+    return (
+      <>
+        <span className="hero-h-line">{line1}</span>
+        <span className="hero-h-line">{line2}</span>
+      </>
+    );
+  }
+
+  const raw = slideHeadline.replace(/\r/g, "").trim();
+  const lines = raw
+    .split(/\n+/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  if (lines.length >= 2) {
+    return (
+      <>
+        <span className="hero-h-line">{renderAccentText(lines[0]!)}</span>
+        <span className="hero-h-line">{renderAccentText(lines.slice(1).join(" "))}</span>
+      </>
+    );
+  }
+
+  // "The cut is the *ornament*." → two lines
+  const m = lines[0]!.match(/^(.*?)\s+(the\s+.+)$/i);
+  if (m?.[1] && m[2]) {
+    return (
+      <>
+        <span className="hero-h-line">{renderAccentText(m[1])}</span>
+        <span className="hero-h-line">{renderAccentText(m[2])}</span>
+      </>
+    );
+  }
+
+  return (
+    <span className="hero-h-line">{renderAccentText(lines[0]!)}</span>
+  );
+}
 
 export function HomeHero({
   slide,
@@ -21,13 +71,14 @@ export function HomeHero({
     slotCap: string;
   };
 }) {
-  const eyebrow = slide?.eyebrow || fallback.eyebrow;
-  const sub = slide?.subtext || fallback.sub;
+  // Normalize em-dashes → spaced en-dashes at render, so stale slide/announcement
+  // copy in the DB matches the house convention without a data migration.
+  const eyebrow = normalizeDashes(slide?.eyebrow || fallback.eyebrow);
+  const sub = normalizeDashes(slide?.subtext || fallback.sub);
   const cta = slide?.buttonLabel || fallback.cta;
   const href = slide?.buttonHref || "#cats";
   const imageUrl = slide?.desktopImageUrl || slide?.mobileImageUrl;
-  const centre = slide?.textPosition === "CENTRE";
-  const overlay = slide?.overlayStrength ?? 40;
+  const overlay = Math.max(50, slide?.overlayStrength ?? 58);
 
   return (
     <div
@@ -46,29 +97,22 @@ export function HomeHero({
             alt=""
             fill
             priority
-            className="object-cover"
+            className="object-cover object-[center_35%]"
             unoptimized
           />
         </div>
       ) : (
         <ImageSlotPlaceholder silhouette="farshi" fill="#F4EEE1" />
       )}
-      <span className="slot-tag">{fallback.slotTag}</span>
       <div className="hero-inner">
-        <div
-          className="hero-copy"
-          style={centre ? { textAlign: "center", marginInline: "auto" } : undefined}
-        >
+        <div className="hero-copy">
           <span className="eyebrow">{eyebrow}</span>
           <h1 className="hero-h">
-            {slide?.headline ? (
-              <span>{renderAccentText(slide.headline)}</span>
-            ) : (
-              <>
-                <span>{fallback.line1}</span>
-                <span>{fallback.line2}</span>
-              </>
-            )}
+            <HeroHeadline
+              slideHeadline={slide?.headline}
+              line1={fallback.line1}
+              line2={fallback.line2}
+            />
           </h1>
           <p className="hero-sub">{sub}</p>
           <div className="hero-cta">
@@ -80,7 +124,6 @@ export function HomeHero({
           </div>
         </div>
       </div>
-      <div className="hero-slotcap">{fallback.slotCap}</div>
     </div>
   );
 }

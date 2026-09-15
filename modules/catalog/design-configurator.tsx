@@ -1,6 +1,7 @@
 "use client";
 
 import { useQueryStates } from "nuqs";
+import { normalizeDashes } from "@/modules/content/accent-text";
 import { useCallback, useMemo, useState } from "react";
 
 import { Money } from "@/modules/ui";
@@ -48,8 +49,11 @@ function leadLine(
   daysOverride: number | null,
   promise?: string,
 ): string {
-  if (promise) return promise;
-  return formatLeadTime(daysOverride);
+  if (daysOverride != null && daysOverride > 0) {
+    return formatLeadTime(daysOverride);
+  }
+  if (promise?.trim()) return promise.trim();
+  return formatLeadTime(null);
 }
 
 export function DesignConfigurator({
@@ -146,8 +150,9 @@ export function DesignConfigurator({
     [design, retailBaseMinor, selectedColourway.compareAtPriceMinor],
   );
 
-  const displayPriceMinor =
-    displayPrice.priceMinor + selectedColourway.priceDeltaMinor;
+  // resolveShadePriceMinor already includes priceDelta when shade has no own base.
+  // Do not add priceDelta again — that double-counted list price vs cart.
+  const displayPriceMinor = displayPrice.priceMinor;
 
   const selectedAvailable =
     state.sizeLabel != null ? (availabilityBySize[state.sizeLabel] ?? 0) : 0;
@@ -226,7 +231,7 @@ export function DesignConfigurator({
         </div>
 
         {design.description ? (
-          <p className="pdp-desc">{design.description}</p>
+          <p className="pdp-desc">{normalizeDashes(design.description)}</p>
         ) : null}
 
         <DesignColourwayPicker
