@@ -9,6 +9,7 @@ import {
   sendResendEmail,
 } from "@/modules/messaging/providers/resend";
 
+import { orderNotificationEmail } from "./email-templates";
 import {
   appendCustomerRemark,
   loadMessageTemplate,
@@ -45,41 +46,51 @@ export const handleMessageSend: OutboxHandler = async (payload) => {
     throw new Error("Invalid message.send payload");
   }
 
-  const template = await loadMessageTemplate({
-    key: payload.templateKey,
-    locale: payload.locale,
-  });
-
-  if (!template) {
-    throw new Error(`No template found for ${payload.templateKey}`);
-  }
-
-  const subject = renderTemplate(template.subject, payload.vars);
-  let body = renderTemplate(template.body, payload.vars);
-  body = appendCustomerRemark(body, payload.customerRemark ?? null);
-
-  if (!isResendConfigured()) {
-    console.log(
-      `[message.send] RESEND_API_KEY unset — logging only\n  to: ${payload.recipient}\n  subject: ${subject}\n  text: ${body}`,
-    );
-    await db
-      .update(messageLog)
-      .set({
-        status: "SENT",
-        sentAt: new Date(),
-        providerRef: "dev-log-only",
-        error: null,
-      })
-      .where(eq(messageLog.id, payload.messageLogId));
-    return;
-  }
-
   try {
+    const template = await loadMessageTemplate({
+      key: payload.templateKey,
+      locale: payload.locale,
+    });
+
+    if (!template) {
+      throw new Error(`No template found for ${payload.templateKey}`);
+    }
+
+    const subject = renderTemplate(template.subject, payload.vars);
+    let body = renderTemplate(template.body, payload.vars);
+    body = appendCustomerRemark(body, payload.customerRemark ?? null);
+
+    if (!isResendConfigured()) {
+      if (process.env.NODE_ENV === "production") {
+        throw new Error("RESEND_API_KEY unset in production — cannot mark SENT");
+      }
+      console.log(
+        `[message.send] RESEND_API_KEY unset — logging only\n  to: ${payload.recipient}\n  subject: ${subject}\n  text: ${body}`,
+      );
+      await db
+        .update(messageLog)
+        .set({
+          status: "SENT",
+          sentAt: new Date(),
+          providerRef: "dev-log-only",
+          error: null,
+        })
+        .where(eq(messageLog.id, payload.messageLogId));
+      return;
+    }
+
+    const html = orderNotificationEmail({
+      templateKey: payload.templateKey,
+      subject,
+      bodyText: body,
+      vars: payload.vars,
+    });
+
     const result = await sendResendEmail({
       from: resolveFromEmail(),
       to: payload.recipient,
       subject,
-      html: `<pre style="font-family: sans-serif; white-space: pre-wrap;">${body.replace(/</g, "&lt;")}</pre>`,
+      html,
       text: body,
     });
 
