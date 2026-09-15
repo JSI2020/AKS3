@@ -1,3 +1,5 @@
+import { normalizeDashes } from "@/modules/content/accent-text";
+
 import { Reveal } from "./reveal";
 
 const SIG_ICONS = [
@@ -50,16 +52,16 @@ export async function Atelier({
       <div className="making-in">
         <div className="making-txt">
           <span className="eyebrow">{eyebrow}</span>
-          <h2 className="serif">{title}</h2>
-          <p>{p1}</p>
-          <p>{p2}</p>
+          <h2 className="serif">{normalizeDashes(title)}</h2>
+          <p>{normalizeDashes(p1)}</p>
+          <p>{normalizeDashes(p2)}</p>
           {aksLine ? <p style={{ fontSize: "13px" }}>{aksLine}</p> : null}
         </div>
         <div className="signatures">
           {signatures.map((text, i) => (
             <div key={`${text}-${i}`} className="sig">
               <span className="ic">{SIG_ICONS[i % SIG_ICONS.length]}</span>
-              <span className="t">{text}</span>
+              <span className="t">{normalizeDashes(text)}</span>
             </div>
           ))}
         </div>

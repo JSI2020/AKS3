@@ -1,4 +1,5 @@
 import { Link } from "@/i18n/routing";
+import { normalizeDashes } from "@/modules/content/accent-text";
 import type { CategoryTilePublic } from "@/modules/content/types";
 import type { HouseCollectionPublic } from "@/modules/catalog/house-collections-queries";
 import { AksBrandLogo } from "@/modules/shop/shell/aks-brand-logo";
@@ -102,7 +103,7 @@ export function CategoryDoors({
               ) : null}
               <div className="label">
                 <div className="n serif">{door.displayName}</div>
-                <div className="m">{door.caption}</div>
+                <div className="m">{normalizeDashes(door.caption)}</div>
                 <div className="go">
                   {exploreTemplate(door.displayName)} →
                 </div>

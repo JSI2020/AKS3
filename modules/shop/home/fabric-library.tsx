@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 
+import { normalizeDashes } from "@/modules/content/accent-text";
 import { listFeaturedFabrics } from "@/modules/shop/fabrics/queries";
 
 import { Reveal } from "./reveal";
@@ -42,9 +43,9 @@ export async function FabricLibrary() {
                   className={`sw ${WEAVE_CLASSES[i % WEAVE_CLASSES.length]}`}
                 />
               )}
-              <h4 className="serif">{f.name}</h4>
-              <div className="ch">{f.drapeNotes || f.composition}</div>
-              <div className="where">{f.composition}</div>
+              <h4 className="serif">{normalizeDashes(f.name)}</h4>
+              <div className="ch">{normalizeDashes(f.drapeNotes || f.composition)}</div>
+              <div className="where">{normalizeDashes(f.composition)}</div>
             </div>
           ))}
         </div>
