@@ -1,6 +1,7 @@
-import { eq } from "drizzle-orm";
+﻿import { eq } from "drizzle-orm";
 
 import {
+  announcements,
   categoryTiles,
   contentLists,
   contentPages,
@@ -23,10 +24,10 @@ import {
 
 const CONSTRUCTION_ITEMS = [
   "Cut by hand from natural cloth",
-  "Panels and flare cut into the cloth — never gathered on",
+  "Panels and flare cut into the cloth – never gathered on",
   "Deep, softly curved hems, so the garment carries weight and hangs true",
-  "Covered fabric fastenings, matched to the cloth — never metal",
-  "Invisible finishing, inside and out — the seam is part of the design",
+  "Covered fabric fastenings, matched to the cloth – never metal",
+  "Invisible finishing, inside and out – the seam is part of the design",
   "Standard house sizes, cut to a considered fit",
 ];
 
@@ -78,10 +79,10 @@ export async function seedContentDefaults(): Promise<void> {
     await db.insert(heroSlides).values({
       id: uuidv7(),
       homepageId: draft.id,
-      eyebrow: "Quiet luxury · rooted in heritage",
-      headline: "The cut is the *ornament*.",
+      eyebrow: "Quiet luxury, cut by hand",
+      headline: "The cut is\nthe *ornament*.",
       subtext:
-        "Heritage silhouettes in matte natural cloth — refined by proportion, drape and finishing. Nothing added to be seen; everything made to be felt.",
+        "Eastern silhouette, Western restraint – in matte natural cloth shaped by proportion and drape. Nothing added to be seen; everything made to be felt.",
       buttonLabel: "Enter the house",
       buttonLink: hashLink("#cats"),
       textPosition: "LEFT",
@@ -102,25 +103,25 @@ export async function seedContentDefaults(): Promise<void> {
       {
         key: "ESSENTIALS",
         name: "Essentials",
-        caption: "Everyday · khaddi & cotton silk",
+        caption: "The everyday, quietly elevated",
         slug: "essentials",
       },
       {
         key: "TAILORED",
         name: "Tailored",
-        caption: "Structured · clean line",
+        caption: "Structure, softened by hand",
         slug: "tailored",
       },
       {
         key: "OCCASION",
         name: "Occasion",
-        caption: "Restrained · covered",
+        caption: "Covered, and never overstated",
         slug: "occasion",
       },
       {
         key: "SIGNATURE",
         name: "Signature",
-        caption: "The statement pieces",
+        caption: "The pieces we're known for",
         slug: "signature",
       },
     ];
@@ -152,7 +153,7 @@ export async function seedContentDefaults(): Promise<void> {
         homepageId: draft.id,
         kind: "STATEMENT",
         payload: {
-          text: "The market signals value through what it *adds*. We signal it through what remains — *proportion, drape, and finishing*. Unmistakably Pakistani in silhouette, contemporary and covered in cut.",
+          text: "Most labels signal value by what they *add*. We signal it by what *remains*: proportion, drape, and a finish you can only reach by hand. Pakistani in silhouette, quiet in intent – made to outlast the season it's bought in.",
         },
         sortOrder: 0,
       },
@@ -225,6 +226,20 @@ export async function seedContentDefaults(): Promise<void> {
         .where(eq(homepages.id, publishedId))
         .limit(1)
     )[0];
+  }
+
+  const announcementCount = await db
+    .select({ id: announcements.id })
+    .from(announcements)
+    .limit(1);
+  if (!announcementCount[0]) {
+    await db.insert(announcements).values({
+      id: uuidv7(),
+      message: "Made when you order · Pakistan shipping first",
+      link: null,
+      sortOrder: 0,
+      active: true,
+    });
   }
 
   const navCount = await db.select({ id: navItems.id }).from(navItems).limit(1);
@@ -308,23 +323,23 @@ export async function seedContentDefaults(): Promise<void> {
     },
     {
       slug: "size-guide",
-      title: "Size & fit guide — intro copy",
-      body: "How we fit — standard house sizes and made-to-measure. Edit this intro in Content → Pages.",
+      title: "Size & fit guide – intro copy",
+      body: "How we fit – standard house sizes XS–XL. Edit this intro in Content → Pages.",
     },
     {
       slug: "faq",
       title: "FAQ",
-      body: "Content coming soon — edit this page in Content → Pages.",
+      body: "Deposit locks your piece. Lead time is set per design (and in storefront settings). Pakistan shipping first – edit details here before launch.",
     },
     {
       slug: "shipping-returns",
       title: "Shipping & returns",
-      body: "Content coming soon — edit this page in Content → Pages.",
+      body: "We ship within Pakistan first. Unworn pieces with tags may be returned within 7 days of delivery – message us on WhatsApp to start a return. Edit this page before launch.",
     },
     {
       slug: "privacy-terms",
       title: "Privacy & terms",
-      body: "Content coming soon — edit this page in Content → Pages.",
+      body: "We keep your order details to make and deliver your piece. We do not sell your data. Edit this page with your counsel before launch.",
     },
   ] as const) {
     const existing = await db

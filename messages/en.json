@@ -2,7 +2,7 @@
   "Brand": {
     "name": "AKS",
     "tagline": "a reflection",
-    "footerBlurb": "Eastern hands, a quieter line — cut with Western restraint, in natural cloth."
+    "footerBlurb": "Eastern hands, a quieter line – cut with Western restraint, in natural cloth."
   },
   "Nav": {
     "new": "New",
@@ -21,29 +21,28 @@
     "wishlist": "Wishlist"
   },
   "Utility": {
-    "leadTime": "Ready to wear — dispatched in 3–5 days",
+    "leadTime": "Ready to wear · timing depends on the piece",
     "whatsapp": "Message us on WhatsApp"
   },
   "Marquee": {
     "items": [
       "Ready to wear",
-      "Ships in 3–5 days",
       "Cut and cloth",
       "Modern but modest",
       "Natural fabric, matte finish"
     ]
   },
   "Home": {
-    "eyebrow": "Minimalist luxury · East meets West",
+    "eyebrow": "Quiet luxury · rooted in heritage",
     "headlineLine1": "Eastern lines,",
     "headlineLine2": "Western calm",
-    "subhead": "Ready-to-wear pieces in natural cloth — Eastern silhouettes cut with Western restraint. Chosen for how they drape, and how they last.",
+    "subhead": "Ready-to-wear pieces in natural cloth – Eastern silhouettes cut with Western restraint. Chosen for how they drape, and how they last.",
     "cta": "See the collections"
   },
   "SizeGuide": {
     "title": "Size guide",
-    "lead": "Find your size below. Every piece is cut to a considered house fit — clean through the shoulder, easy through the body.",
-    "customPrimary": "Between two sizes? Size up for a relaxed line — or message us and we’ll help you choose.",
+    "lead": "Find your size below. Every piece is cut to a considered house fit – clean through the shoulder, easy through the body.",
+    "customPrimary": "Between two sizes? Size up for a relaxed line – or message us and we’ll help you choose.",
     "customCta": "See the collections",
     "standardNote": "Numbers are garment / body measures in inches. Charts are house defaults; a design may refine them.",
     "empty": "Size charts aren’t published yet. Message us and we’ll walk you through fit.",
@@ -51,7 +50,7 @@
   },
   "Fabrics": {
     "title": "Fabrics",
-    "lead": "Natural fibres, matte or low-sheen — chosen for how they drape and how they age. The cloth is the first thing you feel.",
+    "lead": "Natural fibres, matte or low-sheen – chosen for how they drape and how they age. The cloth is the first thing you feel.",
     "empty": "Fabric notes will appear here as we lock the launch library.",
     "care": "Care",
     "drape": "Hand & drape"
@@ -75,8 +74,8 @@
     "account": "Account",
     "bag": "Bag",
     "menu": "Menu",
-    "footerBlurb": "A minimalist-luxury house in Pakistani womenswear — Eastern silhouettes cut with Western restraint, in natural cloth and couture finishing. Built to outlast the season, not chase it.",
-    "footerTag": "East meets West",
+    "footerBlurb": "A house of cut and cloth in Pakistani womenswear – Eastern silhouettes held to a quieter line, in natural fabric and careful finishing. Built to outlast the season, not chase it.",
+    "footerTag": "Made to fit you",
     "footerShop": "Shop",
     "footerAtelier": "Atelier",
     "footerStayClose": "Stay close",
@@ -87,23 +86,23 @@
     "footerNewsletterLead": "First look at each edition, and the thinking behind it.",
     "footerEmailPlaceholder": "Email address",
     "footerSubscribe": "Subscribe",
-    "newsletterThanks": "Noted — we will write when the next edition opens.",
+    "newsletterThanks": "Noted – we will write when the next edition opens.",
     "newsletterInvalid": "Enter a valid email address.",
-    "newsletterError": "Couldn’t save that just now — please try again.",
+    "newsletterError": "Couldn’t save that just now – please try again.",
     "whatsapp": "WhatsApp",
     "instagram": "Instagram",
-    "footerTagline": "AKS — Minimalist luxury · East meets West",
+    "footerTagline": "AKS – عکس. Made to fit you.",
     "footerCopyright": "© 2026 AKS"
   },
   "HomeProto": {
     "heroSlotTag": "Hero · set in admin",
-    "heroEyebrow": "Minimalist luxury · East meets West",
+    "heroEyebrow": "Quiet luxury, cut by hand",
     "heroLine1": "The cut is",
     "heroLine2": "the <em>ornament</em>.",
-    "heroSub": "Eastern silhouettes cut with Western restraint, in matte natural cloth — refined by proportion, drape and finishing. Nothing added to be seen; everything made to be felt.",
+    "heroSub": "Eastern silhouette, Western restraint – in matte natural cloth shaped by proportion and drape. Nothing added to be seen; everything made to be felt.",
     "heroCta": "Enter the house",
-    "heroSlotCap": "Full-bleed welcome image — uploaded & swapped from the admin portal per edition",
-    "statement": "The market signals value through what it *adds*. We signal it through what remains — *proportion, drape, and finishing*. Eastern in silhouette, Western in restraint: two traditions meeting in a single clean line.",
+    "heroSlotCap": "Full-bleed welcome image – uploaded & swapped from the admin portal per edition",
+    "statement": "Most labels signal value by what they *add*. We signal it by what *remains*: proportion, drape, and a finish you can only reach by hand. Pakistani in silhouette, quiet in intent – made to outlast the season it's bought in.",
     "catsTitle": "Shop by category",
     "catSlotTag": "Image · admin",
     "doorEssentialsMotto": "Everyday · khaddi & cotton silk",
@@ -116,8 +115,8 @@
     "filterAll": "All",
     "editEmpty": "No published pieces in this door yet.",
     "fabricEyebrow": "The library",
-    "fabricTitle": "Fabric is the first thing that reads as luxury.",
-    "fabricLead": "Every cloth a natural fibre — matte or low-sheen, chosen for how it drapes and how it ages. Texture and weave replace ornament.",
+    "fabricTitle": "Fabric is the first thing you feel.",
+    "fabricLead": "Every cloth a natural fibre – matte or low-sheen, chosen for how it drapes and how it ages. Texture and weave replace ornament.",
     "fabricCrepeName": "Silk crepe",
     "fabricCrepeCh": "Matte, fluid yet weighted; holds a clean line.",
     "fabricCrepeWhere": "Kurtas · peshwaz · farshi",
@@ -134,13 +133,13 @@
     "atelierTitle": "Cut by hand, in natural cloth.",
     "atelierP1": "Construction is the product: hidden pockets, covered fabric buttons, deep curved hems, panels cut into the cloth and never gathered on. Cut by hand, finished with care, made to outlast the season.",
     "atelierP2": "The fusion lives in the line, never a logo.",
-    "atelierAks": "<em>aks</em> — a reflection. A dress that reflects you, in both worlds.",
+    "atelierAks": "<em>aks</em> – a reflection. A dress that reflects you, in both worlds.",
     "signatures": [
       "Cut by hand from natural cloth",
-      "Panels and flare cut into the cloth — never gathered on",
+      "Panels and flare cut into the cloth – never gathered on",
       "Deep, softly curved hems, so the garment carries weight and hangs true",
-      "Covered fabric fastenings, matched to the cloth — never metal",
-      "Invisible finishing, inside and out — the seam is part of the design",
+      "Covered fabric fastenings, matched to the cloth – never metal",
+      "Invisible finishing, inside and out – the seam is part of the design",
       "Standard house sizes, cut to a considered fit"
     ]
   }
