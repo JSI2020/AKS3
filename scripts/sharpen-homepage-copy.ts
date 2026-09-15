@@ -11,10 +11,24 @@ config({ path: ".env" });
  * text already in place and changes nothing.
  */
 async function main() {
-  const { db, heroSlides, featuredBlocks, categoryTiles } = await import(
-    "@aks/db"
-  );
+  const { db, heroSlides, featuredBlocks, categoryTiles, announcements } =
+    await import("@aks/db");
   const { eq } = await import("drizzle-orm");
+
+  // --- Announcement ticker: "made when you order" contradicts the
+  // standard-sizes ready-to-wear model. Replace with an accurate line. ---
+  const ANN_OLD = "Made when you order · Pakistan shipping first";
+  const ANN_NEW = "Ready to wear, cut by hand · Worldwide shipping from Pakistan";
+  let annCount = 0;
+  for (const a of await db.select().from(announcements)) {
+    if (a.message === ANN_OLD) {
+      await db
+        .update(announcements)
+        .set({ message: ANN_NEW, updatedAt: new Date() })
+        .where(eq(announcements.id, a.id));
+      annCount += 1;
+    }
+  }
 
   // --- Hero: eyebrow + subtext (keep headline "The cut is the *ornament*.") ---
   const HERO_EYEBROW_OLD = "Quiet luxury · rooted in heritage";
@@ -93,7 +107,7 @@ async function main() {
   }
 
   console.log(
-    `Updated: ${heroCount} hero slide(s), ${stmtCount} statement block(s), ${tileCount} category tile(s).`,
+    `Updated: ${annCount} announcement(s), ${heroCount} hero slide(s), ${stmtCount} statement block(s), ${tileCount} category tile(s).`,
   );
   process.exit(0);
 }

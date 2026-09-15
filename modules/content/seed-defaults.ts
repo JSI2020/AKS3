@@ -235,7 +235,7 @@ export async function seedContentDefaults(): Promise<void> {
   if (!announcementCount[0]) {
     await db.insert(announcements).values({
       id: uuidv7(),
-      message: "Made when you order · Pakistan shipping first",
+      message: "Ready to wear, cut by hand · Worldwide shipping from Pakistan",
       link: null,
       sortOrder: 0,
       active: true,
