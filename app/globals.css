@@ -736,14 +736,59 @@
 }
 
 .shop-proto .shop-header.solid {
-  background: rgba(244, 238, 225, 0.92);
+  background: rgba(244, 238, 225, 0.97);
   backdrop-filter: blur(16px);
   border-bottom-color: var(--line);
   color: var(--ink);
 }
 
+.shop-proto .shop-header.solid .brand-logo {
+  color: var(--ink);
+  filter: none;
+}
+
+/* Solid chrome must never keep milk/gold nav from the hero state */
+.shop-proto .shop-header.solid .nav-left a,
+.shop-proto .shop-header.solid .nav-right a,
+.shop-proto .shop-header.solid .nav-right button,
+.shop-proto .shop-header.solid .icobtn,
+.shop-proto .shop-header.solid .burger {
+  color: var(--ink);
+  filter: none;
+  opacity: 0.9;
+}
+
+.shop-proto .shop-header.solid .nav-left a:hover,
+.shop-proto .shop-header.solid .icobtn:hover {
+  opacity: 1;
+  color: var(--ink);
+}
+
 .shop-proto .shop-header.on-hero {
   color: var(--milk);
+  background: transparent;
+  border-bottom-color: transparent;
+}
+
+.shop-proto .shop-header.on-hero .nav-left a,
+.shop-proto .shop-header.on-hero .nav-right a,
+.shop-proto .shop-header.on-hero .nav-right button,
+.shop-proto .shop-header.on-hero .icobtn,
+.shop-proto .shop-header.on-hero .burger {
+  color: var(--milk);
+  opacity: 0.95;
+  filter: drop-shadow(0 1px 10px rgba(43, 41, 38, 0.75));
+}
+
+.shop-proto .shop-header.on-hero .nav-left a:hover,
+.shop-proto .shop-header.on-hero .icobtn:hover {
+  opacity: 1;
+}
+
+.shop-proto .shop-header.on-hero .brand-logo {
+  color: var(--milk);
+  filter: drop-shadow(0 1px 2px rgba(43, 41, 38, 0.95))
+    drop-shadow(0 2px 16px rgba(43, 41, 38, 0.6));
 }
 
 .shop-proto .nav {
@@ -760,8 +805,9 @@
 .shop-proto .nav-left {
   display: flex;
   gap: 2.4rem;
-  font-size: 12px;
-  letter-spacing: 0.14em;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -803,19 +849,19 @@
 .shop-proto .brand-logo {
   display: block;
   width: auto;
-  height: 52px;
+  height: 56px;
   overflow: visible;
+  color: inherit;
   /* Slight optical inset so the crest peak stays inside the chrome */
   margin-block-start: 0.15rem;
-}
-
-.shop-proto .shop-header.on-hero .brand-logo {
-  filter: drop-shadow(0 1px 12px rgba(43, 41, 38, 0.5));
+  transition:
+    height 0.45s ease,
+    filter 0.45s ease,
+    color 0.45s ease;
 }
 
 .shop-proto .shop-header.solid .brand-logo {
-  height: 46px;
-  transition: height 0.5s;
+  height: 48px;
 }
 
 .shop-proto .brand .aks-logo,
@@ -868,8 +914,9 @@
   gap: 1.35rem;
   justify-content: flex-end;
   align-items: center;
-  font-size: 12px;
-  letter-spacing: 0.12em;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -961,8 +1008,9 @@
   border-bottom: 1px solid var(--line);
   background: rgba(244, 238, 225, 0.95);
   color: var(--ink);
-  font-size: 12px;
-  letter-spacing: 0.14em;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -977,14 +1025,20 @@
   display: flex;
 }
 
-/* FULL-BLEED HERO */
+/* FULL-BLEED HERO
+   Quiet-luxury craft: don't fight the photograph with dark scrims.
+   Header is always ink-on-cream; copy sits on a milk atelier slip —
+   same contrast system as the rest of the house. Image stays the star. */
 .shop-proto .hero {
   position: relative;
-  height: 100vh;
-  min-height: 640px;
+  height: min(92vh, 880px);
+  min-height: 600px;
   overflow: hidden;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: stretch;
+  padding-block: clamp(2.5rem, 6vh, 4rem) clamp(3rem, 8vh, 5.5rem);
 }
 
 .shop-proto .hero .imgslot {
@@ -995,17 +1049,26 @@
   height: 112%;
 }
 
-.shop-proto .hero::after {
+/* Scrim — strong enough that the light copy reads over any hero photo,
+   dark or light. Left + bottom gradient anchors the text corner. */
+.shop-proto .hero::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 2;
-  background: linear-gradient(
-    90deg,
-    rgba(43, 41, 38, 0.42),
-    rgba(43, 41, 38, 0.12) 45%,
-    transparent 70%
-  );
+  pointer-events: none;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(20, 24, 40, 0.74) 0%,
+      rgba(20, 24, 40, 0.32) 44%,
+      transparent 72%
+    ),
+    linear-gradient(to top, rgba(15, 18, 34, 0.66) 0%, transparent 48%);
+}
+
+.shop-proto .hero::after {
+  content: none;
 }
 
 .shop-proto .hero-inner {
@@ -1015,88 +1078,118 @@
   margin: 0 auto;
   padding: 0 5vw;
   width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-end;
 }
 
+/* Copy sits directly on the scrim — light, editorial, no card. Visible at
+   rest: no opacity:0 gate, so the first paint already shows the full hero. */
 .shop-proto .hero-copy {
-  max-width: 44ch;
+  position: relative;
+  max-width: min(46ch, 92vw);
+  margin-inline-start: 0;
+  margin-inline-end: auto;
+  text-align: start;
   color: var(--milk);
+  background: transparent;
+  padding: 0;
+  border: 0;
+}
+
+.shop-proto .hero-copy::before {
+  content: none;
 }
 
 .shop-proto .hero-copy .eyebrow {
-  color: rgba(244, 238, 225, 0.85);
-  opacity: 0;
-  animation: shop-proto-fade 1.4s 0.3s forwards;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--gold-lt);
+  letter-spacing: 0.2em;
+  font-size: 12px;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+
+.shop-proto .hero-copy .eyebrow::before {
+  content: "";
+  width: 2.1rem;
+  height: 1px;
+  background: var(--gold-lt);
+  flex: none;
 }
 
 .shop-proto .hero-h {
   font-family: var(--font-shop-display), ui-serif, Georgia, serif;
   font-weight: 300;
-  font-size: clamp(3rem, 6vw, 6rem);
+  font-size: clamp(3rem, 6vw, 4.1rem);
   line-height: 1.02;
-  letter-spacing: -0.01em;
-  margin-top: 1.6rem;
-  text-shadow: 0 1px 40px rgba(43, 41, 38, 0.3);
+  letter-spacing: -0.015em;
+  margin-top: 1.35rem;
+  color: var(--milk);
+  text-shadow: 0 1px 34px rgba(15, 18, 34, 0.35);
 }
 
-.shop-proto .hero-h span {
+.shop-proto .hero-h .hero-h-line,
+.shop-proto .hero-h > span {
   display: block;
-  opacity: 0;
-  transform: translateY(28px);
-  animation: shop-proto-rise 1.5s forwards;
-}
-
-.shop-proto .hero-h span:nth-child(1) {
-  animation-delay: 0.45s;
-}
-
-.shop-proto .hero-h span:nth-child(2) {
-  animation-delay: 0.65s;
 }
 
 .shop-proto .hero-h em {
   font-style: italic;
-  color: var(--ivory);
+  color: #efe4cf;
+  font-weight: 400;
+}
+
+.shop-proto .hero-h .hero-h-line {
+  color: var(--milk);
 }
 
 .shop-proto .hero-sub {
-  max-width: 40ch;
-  margin-top: 2rem;
-  color: rgba(244, 238, 225, 0.9);
-  font-size: 15.5px;
-  opacity: 0;
-  animation: shop-proto-fade 1.4s 1.05s forwards;
+  max-width: 46ch;
+  margin-top: 1.4rem;
+  color: rgba(251, 249, 243, 0.94);
+  font-size: 16px;
+  line-height: 1.72;
+  font-weight: 300;
 }
 
 .shop-proto .hero-cta {
-  margin-top: 2.6rem;
-  opacity: 0;
-  animation: shop-proto-fade 1.4s 1.3s forwards;
+  margin-top: 2rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
+/* Filled milk button — the clear primary action on the dark scrim */
 .shop-proto .hero-cta a {
-  font-size: 12px;
-  letter-spacing: 0.22em;
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  border-bottom: 1px solid var(--milk);
-  padding-bottom: 5px;
-  color: var(--milk);
-  transition: letter-spacing 0.4s;
-  border-radius: 0;
+  color: var(--ink);
+  background: var(--milk);
+  border: 1px solid var(--milk);
+  padding: 0.95rem 1.9rem;
+  border-radius: var(--r);
+  transition:
+    background 0.3s,
+    color 0.3s,
+    border-color 0.3s;
 }
 
 .shop-proto .hero-cta a:hover {
-  letter-spacing: 0.28em;
+  background: var(--gold-lt);
+  color: var(--ink);
+  border-color: var(--gold-lt);
 }
 
+/* Prototype scaffolding — never on the customer storefront */
+.shop-proto .hero .slot-tag,
 .shop-proto .hero-slotcap {
-  position: absolute;
-  bottom: 1.6rem;
-  inset-inline-start: 5vw;
-  z-index: 3;
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(244, 238, 225, 0.7);
+  display: none;
 }
 
 @keyframes shop-proto-fade {
@@ -1117,6 +1210,7 @@
   padding: 6rem 2rem 3rem;
   max-width: 920px;
   margin: 0 auto;
+  overflow-wrap: break-word;
 }
 
 .shop-proto .statement p {
@@ -1126,6 +1220,9 @@
   line-height: 1.5;
   font-style: italic;
   color: var(--espresso);
+  overflow-wrap: anywhere;
+  word-break: normal;
+  hyphens: auto;
 }
 
 .shop-proto .statement p em {
@@ -2608,12 +2705,37 @@
     height: 72px;
   }
 
+  .shop-proto .hero {
+    justify-content: flex-end;
+    align-items: stretch;
+    padding-block: 1.75rem 2rem;
+    min-height: 100svh;
+  }
+
+  .shop-proto .hero::before {
+    content: none;
+  }
+
   .shop-proto .hero::after {
     background: linear-gradient(
       to top,
-      rgba(43, 41, 38, 0.55),
-      rgba(43, 41, 38, 0.15) 60%
+      rgba(43, 41, 38, 0.22) 0%,
+      transparent 48%
     );
+  }
+
+  .shop-proto .hero-h {
+    font-size: clamp(2.5rem, 8.5vw, 3.1rem);
+  }
+
+  .shop-proto .hero-copy {
+    max-width: min(38ch, 94vw);
+    padding: 0;
+  }
+
+  .shop-proto .hero-cta a {
+    width: 100%;
+    text-align: center;
   }
 
   .shop-proto .cats-grid {
