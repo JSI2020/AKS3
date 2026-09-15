@@ -960,7 +960,8 @@
   stroke-linejoin: round;
 }
 
-.shop-proto .icobtn.bag .count {
+.shop-proto .icobtn.bag .count,
+.shop-proto .icobtn.wishlist .count {
   position: absolute;
   top: -1px;
   inset-inline-end: -4px;
@@ -981,9 +982,50 @@
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.shop-proto .icobtn.bag .count.show {
+.shop-proto .icobtn.bag .count.show,
+.shop-proto .icobtn.wishlist .count.show {
   opacity: 1;
   transform: scale(1);
+}
+
+/* Save/remove heart on product cards + PDP */
+.shop-proto .wish-heart {
+  position: absolute;
+  top: 12px;
+  inset-inline-end: 12px;
+  z-index: 3;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  background: rgba(244, 238, 225, 0.86);
+  border: 1px solid rgba(43, 41, 38, 0.1);
+  border-radius: 999px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition:
+    background 0.2s,
+    transform 0.2s;
+}
+.shop-proto .wish-heart:hover {
+  transform: scale(1.08);
+  background: var(--milk);
+}
+.shop-proto .wish-heart svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition:
+    fill 0.2s,
+    stroke 0.2s;
+}
+.shop-proto .wish-heart.on svg {
+  fill: var(--gold);
+  stroke: var(--gold);
 }
 
 .shop-proto .burger {

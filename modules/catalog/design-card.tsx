@@ -2,6 +2,7 @@ import Image from "next/image";
 
 import { Link } from "@/i18n/routing";
 import { Money } from "@/modules/ui";
+import { WishlistHeart } from "@/modules/wishlist/wishlist-heart";
 import {
   ImageSlotPlaceholder,
   type SilhouetteId,
@@ -83,6 +84,16 @@ export function DesignCard({
         {percentOff ? (
           <span className="sale-badge">−{percentOff}%</span>
         ) : null}
+        <WishlistHeart
+          item={{
+            id: design.id,
+            slug: design.slug,
+            name: design.name,
+            garmentType: design.garmentTypeName,
+            priceMinor: design.basePriceMinor,
+            thumbnailUrl: design.thumbnail?.url ?? null,
+          }}
+        />
         {design.thumbnail?.url ? (
           <div className="imgslot figA" style={{ background: "var(--ivory)" }}>
             <Image

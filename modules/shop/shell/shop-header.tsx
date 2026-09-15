@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/routing";
 import { CartHeaderButton } from "@/modules/cart/cart-header-button";
 import { SearchOverlay } from "@/modules/catalog/search-overlay";
+import { WishlistHeaderButton } from "@/modules/wishlist/wishlist-header-button";
 import type { NavItemPublic } from "@/modules/content/types";
 
 import { AksStoreBrandLink } from "./brand";
@@ -110,11 +111,8 @@ export function ShopHeaderClient({
   const t = useTranslations("ShopShell");
   const pathname = usePathname();
   const onHome = isHomePath(pathname);
-  // Always start solid so SSR and first client paint match (avoids hydration error).
-  // On the home hero we switch to on-hero after mount via scroll.
-  // Hash vs route nav also waits for mount — usePathname can disagree with SSR
-  // for one frame under localePrefix routing.
-  const [solid, setSolid] = useState(true);
+  // Ink-on-cream on every page (incl. home). Light-on-hero was cream-on-cream
+  // at the top of the homepage and made nav unreadable.
   const [ready, setReady] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -141,39 +139,13 @@ export function ShopHeaderClient({
 
   useEffect(() => {
     setReady(true);
-    if (!onHome) {
-      setSolid(true);
-      return;
-    }
-
-    const onScroll = () => {
-      const hero = document.querySelector(".hero");
-      const chrome = document.querySelector(".shop-topchrome");
-      const chromeH = chrome
-        ? (chrome as HTMLElement).offsetHeight
-        : 90;
-      const threshold = hero
-        ? Math.max(0, (hero as HTMLElement).offsetHeight - chromeH)
-        : 120;
-      setSolid(window.scrollY > threshold);
-    };
-
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
   }, [onHome]);
 
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
 
-  const headerClass = [
-    "shop-header",
-    solid || !onHome || !ready ? "solid" : "",
-    ready && onHome && !solid ? "on-hero" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const headerClass = "shop-header solid";
 
   // SSR + first client paint: always use route Links (stable).
   // After mount on home: switch hash anchors for in-page jumps.
@@ -226,6 +198,7 @@ export function ShopHeaderClient({
               <use href="#ic-account" />
             </svg>
           </Link>
+          <WishlistHeaderButton label="Wishlist" />
           <CartHeaderButton label={t("bag")} iconMode />
         </div>
       </nav>
