@@ -32,7 +32,8 @@ export async function HomePage() {
   const doorLabels = Object.fromEntries(
     collections.flatMap((c) => [[c.tag, c.navLabel]]),
   );
-  doorLabels.WHITE_COLLECTION = "Signature";
+  doorLabels.WHITE_COLLECTION =
+    collections.find((c) => c.slug === "signature")?.navLabel ?? "Signature";
 
   const editDoorFilters = collections
     .filter((c) => c.slug !== "separates")

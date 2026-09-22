@@ -104,6 +104,47 @@ async function listViableLots(
   );
 }
 
+/** Read-only viable lots for admin lot-picker (FIFO order). */
+export async function listViableFabricLots(input: {
+  fabricId: string;
+  metersRequired: number;
+}): Promise<
+  Array<{
+    id: string;
+    lotCode: string;
+    availableMeters: number;
+    receivedAt: Date;
+  }>
+> {
+  const { db } = await import("@aks/db");
+  const rows = await db
+    .select({
+      id: fabricLots.id,
+      lotCode: fabricLots.lotCode,
+      metersOnHand: fabricLots.metersOnHand,
+      metersReserved: fabricLots.metersReserved,
+      receivedAt: fabricLots.receivedAt,
+    })
+    .from(fabricLots)
+    .where(
+      and(
+        eq(fabricLots.fabricId, input.fabricId),
+        inArray(fabricLots.status, ["AVAILABLE", "LOW"]),
+        sql`${fabricLots.metersOnHand} - ${fabricLots.metersReserved} >= ${input.metersRequired}`,
+      ),
+    )
+    .orderBy(asc(fabricLots.receivedAt));
+
+  return rows
+    .map((lot) => ({
+      id: lot.id,
+      lotCode: lot.lotCode,
+      availableMeters: lotAvailableMeters(lot),
+      receivedAt: lot.receivedAt,
+    }))
+    .filter((lot) => lot.availableMeters >= input.metersRequired);
+}
+
 async function insertReservation(
   tx: DbTx,
   input: {
@@ -176,6 +217,8 @@ export async function allocateFabric(
     metersRequired: number;
     orderItemId: string;
     groupKey?: string;
+    /** When set and viable, prefer this lot over FIFO. */
+    preferredFabricLotId?: string;
   },
   tx: DbTx,
 ): Promise<FabricAllocationResult> {
@@ -184,6 +227,24 @@ export async function allocateFabric(
   }
 
   const groupKey = input.groupKey ?? input.orderItemId;
+
+  if (input.preferredFabricLotId) {
+    const preferred = await lockFabricLot(tx, input.preferredFabricLotId);
+    if (
+      preferred &&
+      preferred.fabricId === input.fabricId &&
+      preferred.status === "AVAILABLE" &&
+      lotAvailableMeters(preferred) >= input.metersRequired
+    ) {
+      return insertReservation(tx, {
+        fabricLotId: preferred.id,
+        lotCode: preferred.lotCode,
+        orderItemId: input.orderItemId,
+        metersRequired: input.metersRequired,
+        fabricId: input.fabricId,
+      });
+    }
+  }
 
   const groupLotId = await findGroupLotId(tx, groupKey, input.fabricId);
   if (groupLotId) {

@@ -1,4 +1,4 @@
-export { allocateFabric, maybeEnqueueLowStockAlert } from "./allocate-fabric";
+export { allocateFabric, maybeEnqueueLowStockAlert, listViableFabricLots } from "./allocate-fabric";
 export {
   reserveFabricForOrder,
   releaseFabricForOrder,

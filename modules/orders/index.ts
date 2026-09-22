@@ -35,9 +35,14 @@ export type {
 } from "./status";
 export { getCustomerOrderByNumber, getTrackedOrderByNumber, listCustomerOrders } from "./customer-queries";
 export type { CustomerOrderView } from "./customer-queries";
+export {
+  attachGuestOrdersByEmail,
+  attachGuestOrdersForCustomer,
+} from "./attach-guest-orders";
 export { ProductionTimeline } from "./tracking/production-timeline";
 export { CustomerOrderTracking } from "./tracking/customer-order-tracking";
 export { listOrders, getOrderDetail, getOrdersListOverview } from "./queries";
+export { listOrderFabricLotOptionsAction } from "./fabric-lot-options";
 export type {
   OrderListItem,
   OrderListResult,
@@ -49,6 +54,7 @@ export {
   advanceStageAction,
   recordPaymentAction,
   updateDepositAction,
+  updateShipmentTrackingAction,
   refundOrderAction,
   cancelOrderAction,
   updateOrderNotesAction,

@@ -452,6 +452,8 @@ export type OrderDetailItem = {
   thumbnailUrl: string | null;
   sizeMode: "STANDARD" | "MADE_TO_MEASURE";
   sizeLabel: string | null;
+  /** Design fabric use per unit — hundredths of a metre. */
+  fabricConsumptionMeters: number;
   measurementSnapshot: {
     sessionId: string;
     values: Record<string, number>;
@@ -517,6 +519,9 @@ export type OrderDetail = {
   balanceAmountMinor: number;
   paidMinor: number;
   paymentPlan: string;
+  courierName: string | null;
+  trackingNumber: string | null;
+  shippedAt: Date | null;
   customerNotes: string | null;
   internalNotes: string | null;
   cancelReason: string | null;
@@ -701,13 +706,19 @@ export async function getOrderDetail(
 
   const designIds = [...new Set(items.map((i) => i.designId))];
   const designNameById = new Map<string, string>();
+  const fabricMetersByDesignId = new Map<string, number>();
   if (designIds.length > 0) {
     const designRows = await db
-      .select({ id: designs.id, name: designs.name })
+      .select({
+        id: designs.id,
+        name: designs.name,
+        fabricConsumptionMeters: designs.fabricConsumptionMeters,
+      })
       .from(designs)
       .where(inArray(designs.id, designIds));
     for (const row of designRows) {
       designNameById.set(row.id, row.name);
+      fabricMetersByDesignId.set(row.id, row.fabricConsumptionMeters);
     }
   }
 
@@ -742,6 +753,9 @@ export async function getOrderDetail(
     balanceAmountMinor: balanceDueMinor,
     paidMinor,
     paymentPlan: order.paymentPlan,
+    courierName: order.courierName,
+    trackingNumber: order.trackingNumber,
+    shippedAt: order.shippedAt,
     customerNotes: order.customerNotes,
     internalNotes: order.internalNotes,
     cancelReason: order.cancelReason,
@@ -764,6 +778,7 @@ export async function getOrderDetail(
       thumbnailUrl: item.designSnapshot.thumbnailUrl ?? null,
       sizeMode: item.sizeMode,
       sizeLabel: item.sizeLabel,
+      fabricConsumptionMeters: fabricMetersByDesignId.get(item.designId) ?? 0,
       measurementSnapshot: item.measurementSnapshot,
       customizationSnapshot: item.customizationSnapshot,
       priceBreakdownSnapshot: item.priceBreakdownSnapshot,

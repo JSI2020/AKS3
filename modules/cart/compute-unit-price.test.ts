@@ -10,6 +10,7 @@ vi.mock("@aks/db", () => ({
   colourways: {
     id: "id",
     priceDeltaMinor: "delta",
+    basePriceMinor: "cwBase",
     active: "active",
     designId: "designId",
   },

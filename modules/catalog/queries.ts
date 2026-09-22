@@ -9,7 +9,9 @@ import {
   ilike,
   inArray,
   lte,
+  notInArray,
   or,
+  sql,
 } from "drizzle-orm";
 
 import {
@@ -21,6 +23,8 @@ import {
   designTags,
   fabrics,
   garmentCategories,
+  orderItems,
+  orders,
 } from "@aks/db";
 
 import { createPresignedReadUrl } from "@/modules/platform/assets/r2";
@@ -257,6 +261,26 @@ export async function getPublishedDesigns(
 
   const where = and(...conditions);
 
+  /** Paid / in-progress units only — unpaid deposit queue does not inflate rank. */
+  const soldSubquery = db
+    .select({
+      designId: orderItems.designId,
+      sold: sql<number>`coalesce(sum(${orderItems.quantity}), 0)`.as("sold"),
+    })
+    .from(orderItems)
+    .innerJoin(orders, eq(orderItems.orderId, orders.id))
+    .where(
+      notInArray(orders.status, [
+        "DRAFT",
+        "CANCELLED",
+        "REFUNDED",
+        "REFUND_PENDING",
+        "AWAITING_DEPOSIT",
+      ]),
+    )
+    .groupBy(orderItems.designId)
+    .as("sold_by_design");
+
   const orderBy = (() => {
     switch (sort) {
       case "oldest":
@@ -266,6 +290,11 @@ export async function getPublishedDesigns(
       case "price_desc":
         return [desc(designs.basePriceMinor), asc(designs.name)];
       case "best_selling":
+        return [
+          sql`coalesce(${soldSubquery.sold}, 0) desc`,
+          desc(designs.publishedAt),
+          asc(designs.name),
+        ];
       case "newest":
       default:
         return [desc(designs.publishedAt), asc(designs.name)];
@@ -285,7 +314,7 @@ export async function getPublishedDesigns(
   const pageCount = total === 0 ? 0 : Math.ceil(total / pageSize);
   const offset = (page - 1) * pageSize;
 
-  let rows = await db
+  let rowsQuery = db
     .select({
       id: designs.id,
       slug: designs.slug,
@@ -303,7 +332,16 @@ export async function getPublishedDesigns(
     .innerJoin(
       garmentCategories,
       eq(designs.garmentTypeId, garmentCategories.id),
-    )
+    );
+
+  if (sort === "best_selling") {
+    rowsQuery = rowsQuery.leftJoin(
+      soldSubquery,
+      eq(designs.id, soldSubquery.designId),
+    ) as typeof rowsQuery;
+  }
+
+  let rows = await rowsQuery
     .where(where)
     .orderBy(...orderBy)
     .limit(pageSize)

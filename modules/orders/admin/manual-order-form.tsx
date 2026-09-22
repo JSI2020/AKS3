@@ -95,7 +95,7 @@ export function ManualOrderForm({ designs }: ManualOrderFormProps) {
   });
 
   const [lines, setLines] = useState<DraftLine[]>([emptyLine()]);
-  const [paymentPlan, setPaymentPlan] = useState<PaymentPlan>("FULL_PREPAID");
+  const [paymentPlan, setPaymentPlan] = useState<PaymentPlan>("FULL_COD");
   const [adjustPrice, setAdjustPrice] = useState(false);
   const [adjustedTotalMinor, setAdjustedTotalMinor] = useState<number | "">("");
   const [adjustReasonCode, setAdjustReasonCode] = useState("");

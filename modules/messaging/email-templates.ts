@@ -55,7 +55,7 @@ function headerBlock(): string {
                 AKS<span style="color:${GOLD};">&#183;</span>ATELIER
               </div>
               <div style="font-family:${SANS};font-size:9px;letter-spacing:.24em;text-transform:uppercase;color:${TAUPE};margin-top:6px;">
-                Minimalist luxury &#183; East meets West
+                Ready to wear &#183; cut by hand
               </div>
             </td>
           </tr>

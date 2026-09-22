@@ -12,7 +12,7 @@ import {
 } from "@aks/db";
 
 import { createPresignedReadUrl } from "@/modules/platform/assets/r2";
-import { formatLeadTime } from "@/modules/catalog/types";
+import { formatLeadTimeLine, getSiteSettings } from "@/modules/content/site-settings";
 import {
   getRtwAvailableByLine,
   rtwStockLineKey,
@@ -105,12 +105,13 @@ export async function hydrateCart(cartId: string): Promise<CartPublic | null> {
     .orderBy(cartLines.createdAt);
 
   if (lines.length === 0) {
+    const settings = await getSiteSettings();
     return {
       id: cart.id,
       lines: [],
       itemCount: 0,
       subtotalMinor: 0,
-      leadTimeLabel: formatCartLeadTime(null),
+      leadTimeLabel: formatCartLeadTime(null, settings.leadTimePromise),
     };
   }
 
@@ -211,6 +212,8 @@ export async function hydrateCart(cartId: string): Promise<CartPublic | null> {
     });
   }
 
+  const settings = await getSiteSettings();
+
   return {
     id: cart.id,
     lines: publicLines,
@@ -218,8 +221,8 @@ export async function hydrateCart(cartId: string): Promise<CartPublic | null> {
     subtotalMinor,
     leadTimeLabel:
       maxLeadTimeDays != null
-        ? formatLeadTime(maxLeadTimeDays)
-        : formatCartLeadTime(null),
+        ? formatLeadTimeLine(settings, maxLeadTimeDays)
+        : formatCartLeadTime(null, settings.leadTimePromise),
   };
 }
 
@@ -274,23 +277,25 @@ export async function getOrCreateActiveCart(ctx: CartContext): Promise<string> {
 export async function loadActiveCart(ctx: CartContext): Promise<CartPublic> {
   const cartId = await getActiveCartId(ctx);
   if (!cartId) {
+    const settings = await getSiteSettings();
     return {
       id: "",
       lines: [],
       itemCount: 0,
       subtotalMinor: 0,
-      leadTimeLabel: formatCartLeadTime(null),
+      leadTimeLabel: formatCartLeadTime(null, settings.leadTimePromise),
     };
   }
 
   const cart = await hydrateCart(cartId);
-  return (
-    cart ?? {
-      id: "",
-      lines: [],
-      itemCount: 0,
-      subtotalMinor: 0,
-      leadTimeLabel: formatCartLeadTime(null),
-    }
-  );
+  if (cart) return cart;
+
+  const settings = await getSiteSettings();
+  return {
+    id: "",
+    lines: [],
+    itemCount: 0,
+    subtotalMinor: 0,
+    leadTimeLabel: formatCartLeadTime(null, settings.leadTimePromise),
+  };
 }

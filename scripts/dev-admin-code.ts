@@ -8,9 +8,9 @@ config({ path: ".env" });
 /**
  * DEV ONLY — mint fresh admin sign-in OTP codes and print them, so you can log
  * in without a real email. Mirrors issueEmailOtp: stores sha256(code) in
- * verification_tokens with a 24-hour expiry.
+ * verification_tokens with a 10-minute expiry.
  */
-const OTP_TTL_MS = 24 * 60 * 60 * 1000;
+const OTP_TTL_MS = 10 * 60 * 1000;
 
 function hashOtp(code: string): string {
   return createHash("sha256").update(code, "utf8").digest("hex");

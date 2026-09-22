@@ -73,9 +73,14 @@ export function cartLineFingerprint(input: {
   });
 }
 
-export function formatCartLeadTime(maxDays: number | null): string {
-  if (maxDays != null) {
-    return `Ready to wear — ships in about ${maxDays} days after checkout.`;
+export function formatCartLeadTime(
+  maxDays: number | null,
+  sitePromise?: string | null,
+): string {
+  if (maxDays != null && maxDays > 0) {
+    return `Ready to wear — ships in about ${maxDays} days after payment.`;
   }
-  return "Ready to wear — ships in about 3–5 days after checkout.";
+  const promise = sitePromise?.trim();
+  if (promise) return promise;
+  return "Ready to wear — timing depends on the piece.";
 }

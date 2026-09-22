@@ -30,7 +30,7 @@ export function SiteSettingsForm({
       }}
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className="flex flex-col gap-1">
+        <label className="flex flex-col gap-1 sm:col-span-2">
           <span className="text-[10px] uppercase tracking-[0.1em] text-ink/55">
             Lead-time promise
           </span>
@@ -40,6 +40,111 @@ export function SiteSettingsForm({
             onChange={(e) =>
               setForm((f) => ({ ...f, leadTimePromise: e.target.value }))
             }
+          />
+          <p className="mt-1 text-[11.5px] text-ink/55">
+            Shown on PDP and cart when a design has no day override.
+          </p>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-[0.1em] text-ink/55">
+            Lead days (min)
+          </span>
+          <input
+            type="number"
+            min={1}
+            className="border border-ink/12 bg-greige px-3 py-2 text-[13px] text-ink outline-none focus:border-ink"
+            value={form.leadTimeDaysMin}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                leadTimeDaysMin: Math.max(1, Number(e.target.value) || 1),
+              }))
+            }
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-[0.1em] text-ink/55">
+            Lead days (max)
+          </span>
+          <input
+            type="number"
+            min={1}
+            className="border border-ink/12 bg-greige px-3 py-2 text-[13px] text-ink outline-none focus:border-ink"
+            value={form.leadTimeDaysMax}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                leadTimeDaysMax: Math.max(1, Number(e.target.value) || 1),
+              }))
+            }
+          />
+        </label>
+        <label className="flex flex-col gap-1 sm:col-span-2">
+          <span className="text-[10px] uppercase tracking-[0.1em] text-ink/55">
+            Shipping promise (checkout label)
+          </span>
+          <input
+            className="border border-ink/12 bg-greige px-3 py-2 text-[13px] text-ink outline-none focus:border-ink"
+            value={form.shippingPromise}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, shippingPromise: e.target.value }))
+            }
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-[0.1em] text-ink/55">
+            Shipping mode
+          </span>
+          <select
+            className="border border-ink/12 bg-greige px-3 py-2 text-[13px] text-ink outline-none focus:border-ink"
+            value={form.shippingMode}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                shippingMode: e.target.value as SiteSettingsPublic["shippingMode"],
+              }))
+            }
+          >
+            <option value="FREE_PAKISTAN">Free within Pakistan</option>
+            <option value="FLAT_PAKISTAN">Flat fee (Pakistan)</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-[0.1em] text-ink/55">
+            Flat fee (PKR)
+          </span>
+          <input
+            type="number"
+            min={0}
+            step={1}
+            disabled={form.shippingMode !== "FLAT_PAKISTAN"}
+            className="border border-ink/12 bg-greige px-3 py-2 text-[13px] text-ink outline-none focus:border-ink disabled:opacity-40"
+            value={Math.round(form.shippingFlatMinor / 100)}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                shippingFlatMinor: Math.max(
+                  0,
+                  Math.trunc(Number(e.target.value) || 0) * 100,
+                ),
+              }))
+            }
+          />
+          <p className="mt-1 text-[11.5px] text-ink/55">
+            Soft launch ships Pakistan only. Free = honest zero, not a stub.
+          </p>
+        </label>
+        <label className="flex flex-col gap-1 sm:col-span-2">
+          <span className="text-[10px] uppercase tracking-[0.1em] text-ink/55">
+            Announcement fallback
+          </span>
+          <input
+            className="border border-ink/12 bg-greige px-3 py-2 text-[13px] text-ink outline-none focus:border-ink"
+            value={form.announcementFallback}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, announcementFallback: e.target.value }))
+            }
+            placeholder="Shown when no active announcement rows"
           />
         </label>
         <label className="flex flex-col gap-1">

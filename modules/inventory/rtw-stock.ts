@@ -5,6 +5,7 @@ import { STANDARD_SIZE_LABELS, uuidv7 } from "@aks/shared";
 
 import type { DbTx } from "@/modules/platform/types";
 
+import { consumeFabricForRtwReceiveTx } from "./consume-fabric-for-rtw";
 import { RtwStockError } from "./types";
 
 export type RtwStockRow = {
@@ -133,6 +134,13 @@ export async function receiveRtwStockTx(
       updatedAt: new Date(),
     })
     .where(eq(rtwStock.id, stockId));
+
+  // Finished pieces imply cloth already cut — deduct metres from lots.
+  await consumeFabricForRtwReceiveTx(tx, {
+    rtwStockId: stockId,
+    quantity,
+    actorId,
+  });
 }
 
 /**

@@ -50,7 +50,21 @@ export async function saveSiteSettingsAction(
   try {
     const session = await requirePermission("settings.edit");
     const before = await getSiteSettings();
-    await upsertSiteSettings(value);
+    const next = {
+      ...value,
+      shippingFlatMinor: Math.max(
+        0,
+        Math.trunc(Number(value.shippingFlatMinor) || 0),
+      ),
+      shippingMode:
+        value.shippingMode === "FLAT_PAKISTAN"
+          ? ("FLAT_PAKISTAN" as const)
+          : ("FREE_PAKISTAN" as const),
+      shippingPromise:
+        value.shippingPromise?.trim() ||
+        "Free shipping within Pakistan",
+    };
+    await upsertSiteSettings(next);
     await insertAuditLog(db, {
       id: uuidv7(),
       actorId: session.user.id,
@@ -59,12 +73,13 @@ export async function saveSiteSettingsAction(
       entityType: "site_settings",
       entityId: null,
       before,
-      after: value,
+      after: next,
     });
     revalidatePath("/");
     revalidatePath("/admin/content");
     revalidatePath("/admin/content/settings");
     revalidatePath("/admin/settings/storefront");
+    revalidatePath("/checkout");
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Failed" };

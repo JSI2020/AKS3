@@ -244,10 +244,10 @@ export function tagValueToCollectionSlug(value: string): string {
 }
 
 export function formatLeadTime(daysOverride: number | null): string {
-  if (daysOverride != null) {
-    return `Ships in ${daysOverride} days`;
+  if (daysOverride != null && daysOverride > 0) {
+    return `Ready to wear · ships in about ${daysOverride} days`;
   }
-  return "Ships in 3–5 days";
+  return "Ready to wear · timing depends on the piece";
 }
 
 export function resolveColourwayId(

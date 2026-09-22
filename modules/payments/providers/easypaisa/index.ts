@@ -1,0 +1,1 @@
+export { createEasyPaisaProvider } from "./adapter";

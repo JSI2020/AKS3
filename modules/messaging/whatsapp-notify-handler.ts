@@ -30,6 +30,8 @@ export const handleWhatsappNotify: OutboxHandler = async (payload) => {
     orderNumber: String(payload.orderNumber ?? ""),
     customerName: String(payload.customerName ?? "there"),
     trackUrl: String(payload.trackUrl ?? ""),
+    courierName: String(payload.courierName ?? "your courier"),
+    trackingNumber: String(payload.trackingNumber ?? "—"),
   };
 
   const template = await loadMessageTemplate({ key: templateKey, locale: "en" });
@@ -42,6 +44,16 @@ export const handleWhatsappNotify: OutboxHandler = async (payload) => {
   );
 
   if (!isWhatsappConfigured()) {
+    if (process.env.NODE_ENV === "production") {
+      await db
+        .update(messageLog)
+        .set({
+          status: "FAILED",
+          error: "WhatsApp env unset in production",
+        })
+        .where(eq(messageLog.id, messageLogId));
+      throw new Error("WhatsApp env unset in production — cannot mark SENT");
+    }
     console.log(
       `[whatsapp.notify] WHATSAPP env unset — logging only · to=${to} · template=${templateKey}\n${body}`,
     );
@@ -69,7 +81,9 @@ export const handleWhatsappNotify: OutboxHandler = async (payload) => {
           bodyParameters: [
             vars.customerName ?? "there",
             vars.orderNumber ?? "",
-            vars.trackUrl ?? "",
+            vars.trackingNumber && vars.trackingNumber !== "—"
+              ? `${vars.courierName}: ${vars.trackingNumber}`
+              : vars.trackUrl ?? "",
           ],
         })
       : await sendWhatsappText({ to, body });

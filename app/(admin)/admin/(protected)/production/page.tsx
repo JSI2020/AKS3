@@ -44,8 +44,8 @@ export default async function ProductionPage({ searchParams }: PageProps) {
       <Eyebrow>Workshop</Eyebrow>
       <h1 className="mt-1 font-display text-3xl text-greige">Production</h1>
       <p className="mt-1 max-w-prose text-[13px] text-chalk">
-        Drag a card to the next column to advance. Touch-first — built for the
-        workshop floor.
+        Queued jobs sit in Ready until Start. Drag a card to the next column to
+        advance. Touch-first — built for the workshop floor.
       </p>
       <div className="mt-6">
         <AdminNuqsProvider>

@@ -10,7 +10,7 @@ import {
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { createHash } from "crypto";
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "fs";
-import { dirname, join } from "path";
+import { dirname, isAbsolute, join, normalize, relative, resolve, sep } from "path";
 import { and, eq, isNotNull, isNull, lte } from "drizzle-orm";
 import sharp from "sharp";
 
@@ -21,6 +21,36 @@ function requireEnv(name: string): string {
   const value = process.env[name];
   if (!value) throw new Error(`${name} is not set`);
   return value;
+}
+
+/**
+ * Reject traversal / absolute keys before joining under `public/`.
+ * Returns a normalized relative key safe for local disk and object storage.
+ */
+export function assertSafeAssetKey(key: string): string {
+  const raw = key.trim();
+  if (!raw) throw new Error("Invalid asset key");
+  if (raw.includes("\0")) throw new Error("Invalid asset key");
+  // Windows drive / UNC / backslash escapes
+  if (/^[a-zA-Z]:/.test(raw) || raw.startsWith("\\\\") || raw.includes("\\")) {
+    throw new Error("Invalid asset key");
+  }
+  const stripped = raw.replace(/^\/+/, "");
+  if (!stripped || stripped.includes("..")) {
+    throw new Error("Invalid asset key");
+  }
+  const publicRoot = resolve(process.cwd(), "public");
+  const candidate = resolve(publicRoot, stripped);
+  const rel = relative(publicRoot, candidate);
+  if (
+    rel.startsWith("..") ||
+    isAbsolute(rel) ||
+    rel.split(sep).includes("..")
+  ) {
+    throw new Error("Invalid asset key");
+  }
+  // Object keys use forward slashes
+  return normalize(stripped).split(sep).join("/");
 }
 
 export function createR2Client(): S3Client {
@@ -56,7 +86,8 @@ function isLocalDevStorage(): boolean {
 }
 
 function localAssetPath(key: string): string {
-  return join(process.cwd(), "public", key.replace(/^\/+/, ""));
+  const safe = assertSafeAssetKey(key);
+  return join(process.cwd(), "public", ...safe.split("/"));
 }
 
 function writeLocalAsset(key: string, body: Buffer): void {
@@ -96,11 +127,8 @@ function mimeExtension(mime: string): string {
 
 function localPublicAssetUrl(key: string): string | null {
   if (!readLocalAsset(key)) return null;
-  const base =
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
-    process.env.AUTH_URL?.replace(/\/$/, "") ??
-    "http://localhost:3000";
-  return `${base}/api/assets/serve?key=${encodeURIComponent(key)}`;
+  // Relative so the same URL works on any local port (3000 / 3002 / …).
+  return `/api/assets/serve?key=${encodeURIComponent(key)}`;
 }
 
 /** Dev-only: persist upload bytes when MinIO/R2 is offline. */
@@ -258,12 +286,13 @@ export async function deleteObject(key: string): Promise<void> {
 }
 
 export async function getObjectBytes(key: string): Promise<Buffer> {
-  const local = readLocalAsset(key);
+  const safe = assertSafeAssetKey(key);
+  const local = readLocalAsset(safe);
   if (local) return local;
 
   const client = createR2Client();
   const res = await client.send(
-    new GetObjectCommand({ Bucket: getBucket(), Key: key }),
+    new GetObjectCommand({ Bucket: getBucket(), Key: safe }),
   );
   const stream = res.Body;
   if (!stream) throw new Error("Empty object body");

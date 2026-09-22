@@ -27,6 +27,16 @@ async function main() {
   });
 
   checks.push({
+    name: "TWO_FACTOR_ENCRYPTION_KEY",
+    ok: !isProd || envSet("TWO_FACTOR_ENCRYPTION_KEY"),
+    detail: envSet("TWO_FACTOR_ENCRYPTION_KEY")
+      ? "set"
+      : isProd
+        ? "missing (required in prod)"
+        : "optional in dev",
+  });
+
+  checks.push({
     name: "RESEND_FROM_EMAIL",
     ok: !isProd || envSet("RESEND_FROM_EMAIL"),
     detail: envSet("RESEND_FROM_EMAIL") ? process.env.RESEND_FROM_EMAIL! : "missing",
@@ -76,9 +86,20 @@ async function main() {
   }
 
   checks.push({
+    name: "AKS_ALLOW_DEV_OTP off in production",
+    ok: !(isProd && process.env.AKS_ALLOW_DEV_OTP === "1"),
+    detail:
+      isProd && process.env.AKS_ALLOW_DEV_OTP === "1"
+        ? "MUST be unset/0 in production — OTP codes must not leak"
+        : "ok",
+  });
+
+  checks.push({
     name: "ALERT_WEBHOOK_URL",
     ok: !strict || envSet("ALERT_WEBHOOK_URL"),
-    detail: envSet("ALERT_WEBHOOK_URL") ? "set (DEAD outbox alerts)" : "optional — recommended for prod",
+    detail: envSet("ALERT_WEBHOOK_URL")
+      ? "set (DEAD outbox alerts)"
+      : "optional — recommended for prod",
   });
 
   checks.push({

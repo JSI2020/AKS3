@@ -61,6 +61,7 @@ function actionError(error: unknown): { ok: false; error: string } {
 
 export async function confirmMeasurementsAction(
   orderId: string,
+  preferredLotByOrderItemId?: Record<string, string>,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const session = await requirePermission("orders.advance_status");
@@ -82,6 +83,17 @@ export async function confirmMeasurementsAction(
       }
 
       const requiresEmbroidery = await orderRequiresEmbroidery(orderId, tx);
+
+      // Prefer explicit lots before the transition hook (idempotent if already reserved).
+      if (
+        preferredLotByOrderItemId &&
+        Object.keys(preferredLotByOrderItemId).length > 0
+      ) {
+        const { reserveFabricForOrder } = await import(
+          "@/modules/inventory/order-lifecycle"
+        );
+        await reserveFabricForOrder(orderId, tx, preferredLotByOrderItemId);
+      }
 
       await transitionOrder({
         orderId,
@@ -105,7 +117,10 @@ export async function confirmMeasurementsAction(
         entityType: "order",
         entityId: orderId,
         before: { status: from },
-        after: { status: "MEASUREMENTS_CONFIRMED" },
+        after: {
+          status: "MEASUREMENTS_CONFIRMED",
+          preferredLotByOrderItemId: preferredLotByOrderItemId ?? null,
+        },
         ip: ctx.ip,
         userAgent: ctx.userAgent,
       });
@@ -124,6 +139,9 @@ export async function advanceStageAction(input: {
   customerRemark?: string;
   /** Hundredths of a metre per order item — required when advancing to CUTTING. */
   actualMetersByOrderItemId?: Record<string, number>;
+  /** Required when advancing READY_TO_SHIP → DISPATCHED. */
+  courierName?: string;
+  trackingNumber?: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const session = await requirePermission("orders.advance_status");
@@ -149,6 +167,26 @@ export async function advanceStageAction(input: {
       const to = getNextProductionStage(from, order.skipEmbroidery);
       if (!to) {
         throw new Error(`No next stage from ${from}.`);
+      }
+
+      if (to === "DISPATCHED") {
+        const courierName = input.courierName?.trim() ?? "";
+        const trackingNumber = input.trackingNumber?.trim() ?? "";
+        if (courierName.length < 2) {
+          throw new Error("Enter the courier name (e.g. TCS, Leopards).");
+        }
+        if (trackingNumber.length < 3) {
+          throw new Error("Enter the AWB / tracking number before dispatch.");
+        }
+        await tx
+          .update(orders)
+          .set({
+            courierName,
+            trackingNumber,
+            shippedAt: new Date(),
+            updatedAt: new Date(),
+          })
+          .where(eq(orders.id, input.orderId));
       }
 
       await transitionOrder({
@@ -197,7 +235,12 @@ export async function advanceStageAction(input: {
         entityType: "order",
         entityId: input.orderId,
         before: { status: from },
-        after: { status: to, customerRemark },
+        after: {
+          status: to,
+          customerRemark,
+          courierName: input.courierName?.trim() || null,
+          trackingNumber: input.trackingNumber?.trim() || null,
+        },
         ip: ctx.ip,
         userAgent: ctx.userAgent,
       });
@@ -209,6 +252,86 @@ export async function advanceStageAction(input: {
       revalidatePath(`/account/orders/${orderNumber}`);
       revalidatePath(`/track/${orderNumber}`);
     }
+    return { ok: true };
+  } catch (error) {
+    return actionError(error);
+  }
+}
+
+/** Correct or fill AWB after dispatch (or before). */
+export async function updateShipmentTrackingAction(input: {
+  orderId: string;
+  courierName: string;
+  trackingNumber: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const session = await requirePermission("orders.edit");
+    const courierName = input.courierName.trim();
+    const trackingNumber = input.trackingNumber.trim();
+    if (courierName.length < 2) {
+      return { ok: false, error: "Enter the courier name." };
+    }
+    if (trackingNumber.length < 3) {
+      return { ok: false, error: "Enter the AWB / tracking number." };
+    }
+
+    const [order] = await db
+      .select({
+        id: orders.id,
+        orderNumber: orders.orderNumber,
+        status: orders.status,
+        courierName: orders.courierName,
+        trackingNumber: orders.trackingNumber,
+      })
+      .from(orders)
+      .where(eq(orders.id, input.orderId))
+      .limit(1);
+
+    if (!order) return { ok: false, error: "Order not found." };
+
+    const shippable = [
+      "READY_TO_SHIP",
+      "DISPATCHED",
+      "DELIVERED",
+      "COMPLETED",
+    ].includes(order.status);
+    if (!shippable) {
+      return {
+        ok: false,
+        error: "Tracking can be set once the order is ready to ship or later.",
+      };
+    }
+
+    await db
+      .update(orders)
+      .set({
+        courierName,
+        trackingNumber,
+        updatedAt: new Date(),
+      })
+      .where(eq(orders.id, input.orderId));
+
+    const ctx = await auditContext();
+    await insertAuditLog(db, {
+      id: uuidv7(),
+      actorId: session.user.id,
+      actorRole: session.user.role,
+      action: "orders.update_shipment",
+      entityType: "order",
+      entityId: input.orderId,
+      before: {
+        courierName: order.courierName,
+        trackingNumber: order.trackingNumber,
+      },
+      after: { courierName, trackingNumber },
+      ip: ctx.ip,
+      userAgent: ctx.userAgent,
+    });
+
+    revalidatePath("/admin/orders");
+    revalidatePath(`/admin/orders/${input.orderId}`);
+    revalidatePath(`/track/${order.orderNumber}`);
+    revalidatePath(`/account/orders/${order.orderNumber}`);
     return { ok: true };
   } catch (error) {
     return actionError(error);

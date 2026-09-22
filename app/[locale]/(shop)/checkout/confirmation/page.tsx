@@ -1,5 +1,9 @@
 import { Link } from "@/i18n/routing";
+import { Money } from "@/modules/ui";
 import { ShopPageContainer } from "@/modules/shop/shell/page-container";
+import { isOnlinePrepaidEnabled } from "@/modules/payments/methods-config";
+import { db, orders } from "@aks/db";
+import { eq } from "drizzle-orm";
 
 type Props = {
   searchParams: Promise<{ order?: string }>;
@@ -7,56 +11,131 @@ type Props = {
 
 export default async function CheckoutConfirmationPage({ searchParams }: Props) {
   const params = await searchParams;
-  const orderNumber = params.order ?? "";
+  const orderNumber = params.order?.trim() ?? "";
+  const onlineEnabled = isOnlinePrepaidEnabled();
+
+  const [order] = orderNumber
+    ? await db
+        .select({
+          orderNumber: orders.orderNumber,
+          status: orders.status,
+          totalMinor: orders.totalMinor,
+          depositAmountMinor: orders.depositAmountMinor,
+          balanceAmountMinor: orders.balanceAmountMinor,
+          paymentPlan: orders.paymentPlan,
+          guestEmail: orders.guestEmail,
+        })
+        .from(orders)
+        .where(eq(orders.orderNumber, orderNumber))
+        .limit(1)
+    : [];
+
+  const awaitingOnlinePay =
+    order?.status === "AWAITING_DEPOSIT" && onlineEnabled;
+  const codConfirmed =
+    order?.paymentPlan === "FULL_COD" ||
+    (order &&
+      order.depositAmountMinor === 0 &&
+      order.balanceAmountMinor > 0 &&
+      order.status !== "AWAITING_DEPOSIT" &&
+      order.status !== "DRAFT" &&
+      order.status !== "CANCELLED");
+  const depositPaid =
+    order &&
+    order.status !== "AWAITING_DEPOSIT" &&
+    order.status !== "DRAFT" &&
+    order.status !== "CANCELLED";
 
   return (
     <ShopPageContainer>
       <div className="mx-auto max-w-[640px] py-12">
         <h1 className="font-display text-[28px] font-medium text-ink">
-          It&apos;s begun
+          {order ? "It's begun" : "Order confirmation"}
         </h1>
-        <p className="mt-3 text-[16px] leading-relaxed text-ink/75">
-          We&apos;ll cut, stitch, and keep you posted at every step — no need to
-          wonder where it is.
-        </p>
 
-        {orderNumber ? (
-          <>
-            <p className="mt-6 font-data text-[15px] text-ink">
-              Order {orderNumber}
-            </p>
-            <Link
-              href={`/track/${encodeURIComponent(orderNumber)}`}
-              className="mt-4 inline-block border border-ink px-4 py-3 text-[12px] uppercase tracking-[0.08em] text-ink"
-            >
-              Track your order
-            </Link>
-            <Link
-              href={`/checkout/pay?order=${encodeURIComponent(orderNumber)}`}
-              className="mt-3 inline-block border border-ink bg-ink px-4 py-3 text-[12px] uppercase tracking-[0.08em] text-greige"
-            >
-              Pay by bank transfer
-            </Link>
-          </>
-        ) : null}
-
-        <p className="mt-6 text-[15px] leading-relaxed text-ink/70">
-          Your order is saved and waiting for deposit. We&apos;ll reach you on
-          WhatsApp with next steps — or pay by bank transfer above.
-        </p>
-
-        <div className="mt-8 space-y-3">
-          <p className="text-[14px] text-ink/65">
-            Want order history and saved measurements? Create an account after
-            this — we never ask before you order.
+        {!orderNumber ? (
+          <p className="mt-3 text-[16px] leading-relaxed text-ink/75">
+            No order number on this page. If you just placed an order, open the
+            link from your confirmation or track it from your email.
           </p>
-          <Link
-            href="/"
-            className="inline-block border border-ink bg-ink px-4 py-3 text-[12px] uppercase tracking-[0.08em] text-greige"
-          >
-            Back to shop
-          </Link>
-        </div>
+        ) : !order ? (
+          <p className="mt-3 text-[16px] leading-relaxed text-ink/75">
+            We could not find order {orderNumber}. Check the number, or message
+            us on WhatsApp and we will sort it.
+          </p>
+        ) : (
+          <>
+            <p className="mt-3 text-[16px] leading-relaxed text-ink/75">
+              {awaitingOnlinePay
+                ? "Your order is saved. Pay online in full to begin — we cut and stitch after that."
+                : codConfirmed
+                  ? "Your order is confirmed. Pay the full amount in cash when it arrives."
+                  : depositPaid
+                    ? "Payment received. We will keep you posted as your piece moves through the workshop."
+                    : "We have your order. Track it any time below."}
+            </p>
+
+            <dl className="mt-6 space-y-2 border border-ink/15 px-4 py-4 text-[14px]">
+              <div className="flex justify-between gap-4">
+                <dt className="text-ink/55">Order</dt>
+                <dd className="font-data text-ink">{order.orderNumber}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-ink/55">Status</dt>
+                <dd className="text-ink">{order.status.replaceAll("_", " ")}</dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-ink/55">Total</dt>
+                <dd>
+                  <Money value={order.totalMinor} />
+                </dd>
+              </div>
+              {order.depositAmountMinor > 0 ? (
+                <div className="flex justify-between gap-4">
+                  <dt className="text-ink/55">Pay now</dt>
+                  <dd>
+                    <Money value={order.depositAmountMinor} />
+                  </dd>
+                </div>
+              ) : null}
+              {order.balanceAmountMinor > 0 ? (
+                <div className="flex justify-between gap-4">
+                  <dt className="text-ink/55">
+                    {order.depositAmountMinor > 0
+                      ? "Balance"
+                      : "Pay on delivery"}
+                  </dt>
+                  <dd>
+                    <Money value={order.balanceAmountMinor} />
+                  </dd>
+                </div>
+              ) : null}
+            </dl>
+
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href={`/track/${encodeURIComponent(order.orderNumber)}`}
+                className="inline-block border border-ink px-4 py-3 text-center text-[12px] uppercase tracking-[0.08em] text-ink"
+              >
+                Track your order
+              </Link>
+              {awaitingOnlinePay ? (
+                <Link
+                  href={`/checkout/pay?order=${encodeURIComponent(order.orderNumber)}`}
+                  className="inline-block border border-ink bg-ink px-4 py-3 text-center text-[12px] uppercase tracking-[0.08em] text-greige"
+                >
+                  Pay online
+                </Link>
+              ) : null}
+            </div>
+
+            {order.guestEmail ? (
+              <p className="mt-4 text-[13px] text-ink/60">
+                Updates go to {order.guestEmail}.
+              </p>
+            ) : null}
+          </>
+        )}
       </div>
     </ShopPageContainer>
   );

@@ -33,6 +33,9 @@ export type CustomerOrderView = {
   totalMinor: number;
   currency: string;
   customerNotes: string | null;
+  courierName: string | null;
+  trackingNumber: string | null;
+  shippedAt: Date | null;
   items: Array<{
     designName: string;
     sizeMode: "STANDARD" | "MADE_TO_MEASURE";
@@ -149,6 +152,9 @@ async function mapCustomerOrder(
     totalMinor: order.totalMinor,
     currency: order.currency,
     customerNotes: order.customerNotes,
+    courierName: order.courierName,
+    trackingNumber: order.trackingNumber,
+    shippedAt: order.shippedAt,
     items: items.map((item) => ({
       designName: item.designSnapshot.name,
       sizeMode: item.sizeMode,
@@ -246,6 +252,11 @@ export async function listCustomerOrders(): Promise<
   const email = session.user.email
     ? normalizeEmail(session.user.email)
     : null;
+
+  if (email) {
+    const { attachGuestOrdersByEmail } = await import("./attach-guest-orders");
+    await attachGuestOrdersByEmail(session.user.id, email);
+  }
 
   const rows = await db
     .select({

@@ -6,7 +6,17 @@ import { uuidv7 } from "@aks/shared";
 import { enqueue } from "@/modules/platform/outbox/enqueue";
 import type { OutboxHandler } from "@/modules/platform/outbox";
 
+import { isWhatsappConfigured } from "./providers/whatsapp";
 import { ORDER_STATUS_TEMPLATE_KEYS } from "./templates";
+
+/** Seed / Resend-rejected domains — do not enqueue (would DEAD the outbox). */
+const UNDELIVERABLE_EMAIL_HOSTS = new Set([
+  "example.com",
+  "example.org",
+  "example.net",
+  "aks.local",
+  "localhost",
+]);
 
 function resolveRecipient(input: {
   guestEmail: string | null;
@@ -14,12 +24,17 @@ function resolveRecipient(input: {
 }): string | null {
   const email = input.userEmail?.trim() || input.guestEmail?.trim();
   if (!email || !email.includes("@")) return null;
-  return email.toLowerCase();
+  const normalized = email.toLowerCase();
+  const host = normalized.split("@")[1] ?? "";
+  if (UNDELIVERABLE_EMAIL_HOSTS.has(host)) return null;
+  return normalized;
 }
 
 function trackUrl(orderNumber: string): string {
   const base =
     process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ??
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
+    process.env.AUTH_URL?.replace(/\/$/, "") ??
     "http://localhost:3000";
   return `${base}/track/${encodeURIComponent(orderNumber)}`;
 }
@@ -43,7 +58,11 @@ function isOrderTransitionedPayload(
   );
 }
 
-/** Enqueues a templated customer email for each order status change. */
+/**
+ * Customer notify for each order status change.
+ * Email via Resend when a real recipient exists.
+ * WhatsApp only when WHATSAPP_* env is configured (otherwise skipped — no fake SENT).
+ */
 export const handleOrderTransitioned: OutboxHandler = async (payload) => {
   if (!isOrderTransitionedPayload(payload)) {
     throw new Error("Invalid order.transitioned payload");
@@ -60,6 +79,8 @@ export const handleOrderTransitioned: OutboxHandler = async (payload) => {
       whatsappNumber: orders.whatsappNumber,
       userId: orders.userId,
       shippingAddressSnapshot: orders.shippingAddressSnapshot,
+      courierName: orders.courierName,
+      trackingNumber: orders.trackingNumber,
     })
     .from(orders)
     .where(eq(orders.id, payload.id))
@@ -81,12 +102,17 @@ export const handleOrderTransitioned: OutboxHandler = async (payload) => {
     orderNumber: order.orderNumber,
     customerName,
     trackUrl: trackUrl(order.orderNumber),
+    courierName: order.courierName?.trim() || "your courier",
+    trackingNumber: order.trackingNumber?.trim() || "—",
   };
 
   const emailRecipient = resolveRecipient({
     guestEmail: order.guestEmail,
     userEmail: user?.email ?? null,
   });
+
+  const whatsapp = order.whatsappNumber?.replace(/\D/g, "") ?? "";
+  const sendWhatsapp = isWhatsappConfigured() && whatsapp.length >= 10;
 
   await db.transaction(async (tx) => {
     if (emailRecipient) {
@@ -112,9 +138,7 @@ export const handleOrderTransitioned: OutboxHandler = async (payload) => {
       );
     }
 
-    // WhatsApp provider wires later — queue the intent with each stage change.
-    const whatsapp = order.whatsappNumber?.replace(/\D/g, "") ?? "";
-    if (whatsapp.length >= 10) {
+    if (sendWhatsapp) {
       const waLogId = uuidv7();
       await tx.insert(messageLog).values({
         id: waLogId,
@@ -134,6 +158,8 @@ export const handleOrderTransitioned: OutboxHandler = async (payload) => {
           customerName,
           note: payload.note ?? null,
           trackUrl: vars.trackUrl,
+          courierName: vars.courierName,
+          trackingNumber: vars.trackingNumber,
         },
         tx,
       );

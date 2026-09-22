@@ -37,7 +37,7 @@ const CONSTRUCTION_ITEMS = [
  */
 export async function seedContentDefaults(): Promise<void> {
   const existingSettings = await db
-    .select({ key: siteSettings.key })
+    .select({ key: siteSettings.key, value: siteSettings.value })
     .from(siteSettings)
     .where(eq(siteSettings.key, "storefront"))
     .limit(1);
@@ -46,6 +46,17 @@ export async function seedContentDefaults(): Promise<void> {
       key: "storefront",
       value: { ...DEFAULT_SITE_SETTINGS },
     });
+  } else {
+    const raw =
+      existingSettings[0].value &&
+      typeof existingSettings[0].value === "object"
+        ? (existingSettings[0].value as Record<string, unknown>)
+        : {};
+    const merged = { ...DEFAULT_SITE_SETTINGS, ...raw };
+    await db
+      .update(siteSettings)
+      .set({ value: merged, updatedAt: new Date() })
+      .where(eq(siteSettings.key, "storefront"));
   }
 
   let draft = (
@@ -235,7 +246,7 @@ export async function seedContentDefaults(): Promise<void> {
   if (!announcementCount[0]) {
     await db.insert(announcements).values({
       id: uuidv7(),
-      message: "Ready to wear, cut by hand · Worldwide shipping from Pakistan",
+      message: "Ready to wear, cut by hand · Free shipping within Pakistan",
       link: null,
       sortOrder: 0,
       active: true,
@@ -329,12 +340,12 @@ export async function seedContentDefaults(): Promise<void> {
     {
       slug: "faq",
       title: "FAQ",
-      body: "Deposit locks your piece. Lead time is set per design (and in storefront settings). Pakistan shipping first – edit details here before launch.",
+      body: "Soft launch is ready-to-wear in house sizes XS–XL.\n\nCash on delivery: pay the full amount when your order arrives.\n\nWe ship within Pakistan; shipping is free on soft-launch orders. Lead time is set per design (and in storefront settings).\n\nTrack your order with the email you gave at checkout.",
     },
     {
       slug: "shipping-returns",
       title: "Shipping & returns",
-      body: "We ship within Pakistan first. Unworn pieces with tags may be returned within 7 days of delivery – message us on WhatsApp to start a return. Edit this page before launch.",
+      body: "We ship within Pakistan. Soft launch includes free shipping on every order — pay on delivery.\n\nUnworn pieces with tags may be returned within 7 days of delivery; message us on WhatsApp to start a return.",
     },
     {
       slug: "privacy-terms",
@@ -343,7 +354,7 @@ export async function seedContentDefaults(): Promise<void> {
     },
   ] as const) {
     const existing = await db
-      .select({ id: contentPages.id })
+      .select({ id: contentPages.id, body: contentPages.body })
       .from(contentPages)
       .where(eq(contentPages.slug, page.slug))
       .limit(1);
@@ -356,6 +367,37 @@ export async function seedContentDefaults(): Promise<void> {
         status: "PUBLISHED",
         publishedAt: new Date(),
       });
+      continue;
     }
+
+    const stale =
+      existing[0].body.includes("edit before launch") ||
+      existing[0].body.includes("Edit this page before launch") ||
+      existing[0].body.includes("Deposit locks your piece") ||
+      existing[0].body.includes("Pakistan shipping first");
+    if (stale && (page.slug === "faq" || page.slug === "shipping-returns")) {
+      await db
+        .update(contentPages)
+        .set({
+          title: page.title,
+          body: page.body,
+          updatedAt: new Date(),
+        })
+        .where(eq(contentPages.id, existing[0].id));
+    }
+  }
+
+  const staleAnnouncements = await db
+    .select({ id: announcements.id, message: announcements.message })
+    .from(announcements);
+  for (const row of staleAnnouncements) {
+    if (!row.message.toLowerCase().includes("worldwide")) continue;
+    await db
+      .update(announcements)
+      .set({
+        message: "Ready to wear, cut by hand · Free shipping within Pakistan",
+        updatedAt: new Date(),
+      })
+      .where(eq(announcements.id, row.id));
   }
 }

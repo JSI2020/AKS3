@@ -73,6 +73,8 @@ export async function getOrderForBankTransfer(orderNumber: string) {
       balanceAmountMinor: orders.balanceAmountMinor,
       totalMinor: orders.totalMinor,
       paymentPlan: orders.paymentPlan,
+      guestPhone: orders.guestPhone,
+      whatsappNumber: orders.whatsappNumber,
     })
     .from(orders)
     .where(eq(orders.orderNumber, orderNumber))
@@ -91,8 +93,21 @@ export async function getOrderForBankTransfer(orderNumber: string) {
     )
     .limit(1);
 
+  const [safepayPending] = await db
+    .select({ id: payments.id })
+    .from(payments)
+    .where(
+      and(
+        eq(payments.orderId, order.id),
+        eq(payments.provider, "SAFEPAY"),
+        eq(payments.status, "PENDING"),
+      ),
+    )
+    .limit(1);
+
   return {
     ...order,
     hasPendingVerification: Boolean(pending),
+    hasSafepayPending: Boolean(safepayPending),
   };
 }

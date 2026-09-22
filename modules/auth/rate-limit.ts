@@ -3,7 +3,7 @@ import { and, eq, gte, inArray, sql } from "drizzle-orm";
 import { db, signInAttempts } from "@aks/db";
 
 const WINDOW_MS = 60 * 60 * 1000;
-/** Failed verify attempts — keep short even when OTP codes last 24h. */
+/** Failed verify attempts window (slightly longer than OTP TTL). */
 const VERIFY_WINDOW_MS = 15 * 60 * 1000;
 
 export const OTP_EMAIL_LIMIT = 5;

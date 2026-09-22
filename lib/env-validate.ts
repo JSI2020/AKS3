@@ -5,12 +5,16 @@
  */
 const ALWAYS_REQUIRED = ["DATABASE_URL"] as const;
 
-// Confirmed to be used by real customer-facing flows (transactional email).
-const PROD_REQUIRED = ["RESEND_API_KEY", "RESEND_FROM_EMAIL"] as const;
+// Confirmed to be used by real customer-facing flows (auth + email).
+const PROD_REQUIRED = [
+  "RESEND_API_KEY",
+  "RESEND_FROM_EMAIL",
+  "AUTH_SECRET",
+  "TWO_FACTOR_ENCRYPTION_KEY",
+] as const;
 
 // Strongly recommended in production, but the app can boot without them.
 const PROD_RECOMMENDED = [
-  "AUTH_SECRET",
   "FAL_KEY",
   "R2_ACCOUNT_ID",
   "R2_BUCKET",
@@ -61,3 +65,10 @@ export function validateEnv(): void {
     }
   }
 }
+
+/** Exported for unit tests. */
+export const __envValidateTest = {
+  PROD_REQUIRED,
+  PROD_RECOMMENDED,
+  ALWAYS_REQUIRED,
+};

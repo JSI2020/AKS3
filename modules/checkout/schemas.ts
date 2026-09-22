@@ -62,7 +62,7 @@ export function validateCheckoutAddress(
 
   const guestEmail = trim(input.guestEmail);
   if (guestEmail && !guestEmail.includes("@")) {
-    return { ok: false, error: "Enter a valid email, or leave it blank." };
+    return { ok: false, error: "Enter a valid email." };
   }
 
   return {
@@ -88,8 +88,7 @@ export function validateCheckoutAddress(
 export function validatePaymentPlan(
   plan: string,
 ): { ok: true; plan: import("./payment-plans").PaymentPlan } | { ok: false; error: string } {
-  // DEPOSIT_70_COD_30 is retired — no longer accepted for new orders.
-  if (plan === "FULL_PREPAID" || plan === "DEPOSIT_50_COD_50") {
+  if (plan === "FULL_COD" || plan === "FULL_PREPAID") {
     return { ok: true, plan };
   }
   return { ok: false, error: "Choose how you would like to pay." };

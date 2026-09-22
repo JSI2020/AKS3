@@ -1,5 +1,5 @@
 export { CheckoutFlow } from "./checkout-flow";
-export { placeOrder, getCheckoutCart, validateCheckoutCart, getCheckoutCodStatus, applyCheckoutDiscount } from "./actions";
+export { placeOrder, getCheckoutCart, validateCheckoutCart, getCheckoutCodStatus, getCheckoutShippingQuote, applyCheckoutDiscount } from "./actions";
 export type {
   CheckoutAddressInput,
   CheckoutStep,
@@ -15,3 +15,4 @@ export {
   provinceLabel,
   type PaymentPlan,
 } from "./payment-plans";
+export { quoteShipping } from "./shipping";

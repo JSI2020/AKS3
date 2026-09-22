@@ -16,12 +16,19 @@ import {
 } from "@/modules/platform/assets";
 
 import { createBankTransferPaymentStandalone } from "./create-payment";
+import { isPaymentMethodEnabled } from "../methods-config";
 
 export async function submitBankTransferReceipt(input: {
   orderNumber: string;
   key: string;
   mime: string;
 }): Promise<{ ok: true; paymentId: string } | { ok: false; error: string }> {
+  if (!isPaymentMethodEnabled("BANK_TRANSFER")) {
+    return {
+      ok: false,
+      error: "Bank transfer is not available yet. Use cash on delivery.",
+    };
+  }
   if (!input.orderNumber.trim()) {
     return { ok: false, error: "Order number is required." };
   }

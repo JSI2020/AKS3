@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import { provinceLabel } from "@/modules/checkout/payment-plans";
 import { useCan } from "@/modules/auth/use-can";
@@ -20,8 +20,10 @@ import {
   refundOrderAction,
   updateDepositAction,
   updateOrderNotesAction,
+  updateShipmentTrackingAction,
   uploadOrderPhotoAction,
 } from "../actions";
+import { listOrderFabricLotOptionsAction } from "../fabric-lot-options";
 import { OrderMessagesPanel } from "./order-messages-panel";
 import {
   ORDER_CANCEL_REASONS,
@@ -73,6 +75,40 @@ export function OrderDetailView({
   const [error, setError] = useState<string | null>(null);
   const [customerRemark, setCustomerRemark] = useState("");
   const [advancePhoto, setAdvancePhoto] = useState<File | null>(null);
+  const [courierName, setCourierName] = useState(order.courierName ?? "");
+  const [trackingNumber, setTrackingNumber] = useState(
+    order.trackingNumber ?? "",
+  );
+  /** Hundredths of a metre per order item — used when advancing into CUTTING. */
+  const [actualMetersByItem, setActualMetersByItem] = useState<
+    Record<string, number>
+  >(() =>
+    Object.fromEntries(
+      order.items.map((item) => [
+        item.id,
+        Math.max(0, item.fabricConsumptionMeters * item.quantity),
+      ]),
+    ),
+  );
+  const [preferredLotByItem, setPreferredLotByItem] = useState<
+    Record<string, string>
+  >({});
+  const [lotOptions, setLotOptions] = useState<
+    Array<{
+      orderItemId: string;
+      designName: string;
+      metersRequired: number;
+      lots: Array<{ id: string; lotCode: string; availableMeters: number }>;
+    }>
+  >([]);
+
+  useEffect(() => {
+    if (order.status !== "DEPOSIT_PAID") return;
+    if (!order.items.some((i) => i.sizeMode === "MADE_TO_MEASURE")) return;
+    void listOrderFabricLotOptionsAction(order.id).then((res) => {
+      if (res.ok) setLotOptions(res.lines);
+    });
+  }, [order.id, order.status, order.items]);
 
   const canAdvance = useCan("orders.advance_status");
   const canEdit = useCan("orders.edit");
@@ -145,11 +181,22 @@ export function OrderDetailView({
           });
         }
         if (order.status === "DEPOSIT_PAID") {
-          return await confirmMeasurementsAction(order.id);
+          return await confirmMeasurementsAction(
+            order.id,
+            Object.keys(preferredLotByItem).length > 0
+              ? preferredLotByItem
+              : undefined,
+          );
         }
         return await advanceStageAction({
           orderId: order.id,
           customerRemark: customerRemark || undefined,
+          courierName:
+            order.status === "READY_TO_SHIP" ? courierName : undefined,
+          trackingNumber:
+            order.status === "READY_TO_SHIP" ? trackingNumber : undefined,
+          actualMetersByOrderItemId:
+            nextStage === "CUTTING" ? actualMetersByItem : undefined,
         });
       } catch (caught) {
         return {
@@ -458,6 +505,118 @@ export function OrderDetailView({
                 <p className="mb-3 text-[12px] text-zari">{gateNote}</p>
               ) : null}
               <div className="grid gap-3">
+                {order.status === "DEPOSIT_PAID" && lotOptions.length > 0 ? (
+                  <div className="grid gap-3">
+                    <p className="text-[11px] uppercase tracking-[0.12em] text-milk/55">
+                      Fabric lot (optional override — FIFO if blank)
+                    </p>
+                    {lotOptions.map((line) => (
+                      <label
+                        key={line.orderItemId}
+                        className="grid gap-1 sm:grid-cols-[1fr_12rem] sm:items-end"
+                      >
+                        <span className="text-[13px] text-milk/80">
+                          {line.designName}
+                          <span className="ms-2 text-[11px] text-milk/45">
+                            need {(line.metersRequired / 100).toFixed(2)} m
+                          </span>
+                        </span>
+                        <select
+                          disabled={pending}
+                          value={preferredLotByItem[line.orderItemId] ?? ""}
+                          onChange={(e) =>
+                            setPreferredLotByItem((prev) => {
+                              const next = { ...prev };
+                              if (!e.target.value) delete next[line.orderItemId];
+                              else next[line.orderItemId] = e.target.value;
+                              return next;
+                            })
+                          }
+                          className="border border-milk/20 bg-transparent px-3 py-2 font-data text-[13px] text-milk"
+                        >
+                          <option value="">FIFO auto</option>
+                          {line.lots.map((lot) => (
+                            <option key={lot.id} value={lot.id}>
+                              {lot.lotCode} · {(lot.availableMeters / 100).toFixed(2)} m
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    ))}
+                  </div>
+                ) : null}
+                {order.status === "READY_TO_SHIP" ? (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="flex flex-col gap-1.5">
+                      <span className="text-[10px] uppercase tracking-[0.14em] text-milk/55">
+                        Courier
+                      </span>
+                      <input
+                        value={courierName}
+                        onChange={(e) => setCourierName(e.target.value)}
+                        disabled={pending}
+                        placeholder="TCS, Leopards, Call courier…"
+                        className="border border-milk/20 bg-transparent px-3 py-2 text-[13px] text-milk placeholder:text-milk/40"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1.5">
+                      <span className="text-[10px] uppercase tracking-[0.14em] text-milk/55">
+                        AWB / tracking number
+                      </span>
+                      <input
+                        value={trackingNumber}
+                        onChange={(e) => setTrackingNumber(e.target.value)}
+                        disabled={pending}
+                        placeholder="Required to dispatch"
+                        className="border border-milk/20 bg-transparent px-3 py-2 font-data text-[13px] text-milk placeholder:text-milk/40"
+                      />
+                    </label>
+                  </div>
+                ) : null}
+                {nextStage === "CUTTING" ? (
+                  <div className="grid gap-3">
+                    <p className="text-[11px] uppercase tracking-[0.12em] text-milk/55">
+                      Actual cut metres (per line)
+                    </p>
+                    {order.items.map((item) => {
+                      const estimated =
+                        item.fabricConsumptionMeters * item.quantity;
+                      const actual = actualMetersByItem[item.id] ?? estimated;
+                      return (
+                        <label
+                          key={item.id}
+                          className="grid gap-1 sm:grid-cols-[1fr_8rem] sm:items-end"
+                        >
+                          <span className="text-[13px] text-milk/80">
+                            {item.designName}
+                            {item.sizeLabel ? ` · ${item.sizeLabel}` : ""}
+                            <span className="ms-2 text-[11px] text-milk/45">
+                              est. {(estimated / 100).toFixed(2)} m
+                            </span>
+                          </span>
+                          <input
+                            type="number"
+                            min={0}
+                            step={0.01}
+                            disabled={pending}
+                            value={(actual / 100).toFixed(2)}
+                            onChange={(e) => {
+                              const metres = Number(e.target.value);
+                              const hundredths = Number.isFinite(metres)
+                                ? Math.max(0, Math.round(metres * 100))
+                                : 0;
+                              setActualMetersByItem((prev) => ({
+                                ...prev,
+                                [item.id]: hundredths,
+                              }));
+                            }}
+                            className="border border-milk/20 bg-transparent px-3 py-2 font-data text-[13px] text-milk"
+                          />
+                        </label>
+                      );
+                    })}
+                  </div>
+                ) : null}
                 <textarea
                   value={customerRemark}
                   onChange={(event) => setCustomerRemark(event.target.value)}
@@ -485,9 +644,11 @@ export function OrderDetailView({
                     ? "Mark deposit paid → Order confirmed"
                     : order.status === "DEPOSIT_PAID"
                       ? "Confirm → start cutting"
-                      : nextStage
-                        ? `Advance to ${productionStageLabel(nextStage)}`
-                        : "Advance"}
+                      : order.status === "READY_TO_SHIP"
+                        ? "Dispatch with AWB"
+                        : nextStage
+                          ? `Advance to ${productionStageLabel(nextStage)}`
+                          : "Advance"}
                 </button>
               </div>
             </section>
@@ -751,6 +912,61 @@ export function OrderDetailView({
               </span>
             </address>
           </Panel>
+          {(order.status === "READY_TO_SHIP" ||
+            order.status === "DISPATCHED" ||
+            order.status === "DELIVERED" ||
+            order.status === "COMPLETED" ||
+            order.trackingNumber) && (
+            <Panel title="Shipment / AWB">
+              {order.shippedAt ? (
+                <p className="mb-3 text-[12px] text-ink/55">
+                  Shipped {formatDateTime(order.shippedAt)}
+                </p>
+              ) : null}
+              <div className="grid gap-3">
+                <label className="flex flex-col gap-1">
+                  <span className="text-[11px] uppercase tracking-[0.08em] text-ink/55">
+                    Courier
+                  </span>
+                  <input
+                    value={courierName}
+                    onChange={(e) => setCourierName(e.target.value)}
+                    disabled={pending || !canEdit}
+                    className="border border-ink/15 bg-milk px-2 py-2 text-[13px] text-ink"
+                  />
+                </label>
+                <label className="flex flex-col gap-1">
+                  <span className="text-[11px] uppercase tracking-[0.08em] text-ink/55">
+                    AWB / tracking
+                  </span>
+                  <input
+                    value={trackingNumber}
+                    onChange={(e) => setTrackingNumber(e.target.value)}
+                    disabled={pending || !canEdit}
+                    className="border border-ink/15 bg-milk px-2 py-2 font-data text-[13px] text-ink"
+                  />
+                </label>
+                {canEdit ? (
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() =>
+                      run(() =>
+                        updateShipmentTrackingAction({
+                          orderId: order.id,
+                          courierName,
+                          trackingNumber,
+                        }),
+                      )
+                    }
+                    className="self-start border border-ink px-3 py-2 text-[12px] uppercase tracking-[0.06em] text-ink disabled:opacity-40"
+                  >
+                    Save tracking
+                  </button>
+                ) : null}
+              </div>
+            </Panel>
+          )}
           <PaymentPanel
             order={order}
             depositPaid={depositPaid}

@@ -35,6 +35,7 @@ async function lockFabricLotRow(tx: DbTx, lotId: string) {
 export async function reserveFabricForOrder(
   orderId: string,
   tx: DbTx,
+  preferredLotByOrderItemId?: Record<string, string>,
 ): Promise<void> {
   const items = await tx
     .select({
@@ -42,11 +43,16 @@ export async function reserveFabricForOrder(
       designId: orderItems.designId,
       colourwayId: orderItems.colourwayId,
       quantity: orderItems.quantity,
+      sizeMode: orderItems.sizeMode,
     })
     .from(orderItems)
     .where(eq(orderItems.orderId, orderId));
 
   for (const item of items) {
+    // RTW (STANDARD): cloth was consumed when finished stock was received.
+    // Only MTM (and future made paths) reserve fabric on the order.
+    if (item.sizeMode === "STANDARD") continue;
+
     const existing = await tx
       .select({ id: fabricReservations.id })
       .from(fabricReservations)
@@ -85,6 +91,7 @@ export async function reserveFabricForOrder(
         metersRequired,
         orderItemId: item.id,
         groupKey: orderId,
+        preferredFabricLotId: preferredLotByOrderItemId?.[item.id],
       },
       tx,
     );

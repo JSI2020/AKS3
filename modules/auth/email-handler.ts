@@ -25,7 +25,8 @@ function isEmailSendPayload(
 
 /**
  * Outbox handler for `email.send`.
- * Uses Resend when RESEND_API_KEY is set; otherwise logs in development and still succeeds (SENT).
+ * Uses Resend when RESEND_API_KEY is set; otherwise logs in development.
+ * In production, unset Resend fails hard so OTP / auth mail never silently "succeeds".
  */
 export const handleEmailSend: OutboxHandler = async (payload) => {
   if (!isEmailSendPayload(payload)) {
@@ -33,6 +34,9 @@ export const handleEmailSend: OutboxHandler = async (payload) => {
   }
 
   if (!isResendConfigured()) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("RESEND_API_KEY unset in production — cannot send email");
+    }
     console.log(
       `[email.send] RESEND_API_KEY unset — logging only\n  to: ${payload.to}\n  subject: ${payload.subject}\n  text: ${payload.text ?? "(html only)"}`,
     );

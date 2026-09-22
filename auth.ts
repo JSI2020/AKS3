@@ -532,7 +532,7 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
       }
       return true;
     },
-    async jwt({ token, user, account, trigger, session }) {
+    async jwt({ token, user, account, trigger }) {
       if (user) {
         token.sub = user.id;
         token.role = (user as { role?: string }).role;
@@ -565,25 +565,25 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
         token.sessionId = oauthSession.id;
       }
 
-      if (trigger === "update" && session) {
-        const s = session as {
-          user?: {
-            twoFactorEnabled?: boolean;
-            requires2faEnrolment?: boolean;
-          };
-          twoFactorEnabled?: boolean;
-          requires2faEnrolment?: boolean;
-        };
-        const enabled =
-          s.user?.twoFactorEnabled ?? s.twoFactorEnabled;
-        const requires =
-          s.user?.requires2faEnrolment ?? s.requires2faEnrolment;
-        if (typeof enabled === "boolean") {
+      // Never trust client-supplied 2FA flags — reload from DB.
+      if (trigger === "update" && token.sub) {
+        const [row] = await db
+          .select({
+            twoFactorEnabledAt: users.twoFactorEnabledAt,
+            twoFactorSecret: users.twoFactorSecret,
+            role: users.role,
+          })
+          .from(users)
+          .where(eq(users.id, token.sub))
+          .limit(1);
+        if (row) {
+          const enabled =
+            !!row.twoFactorEnabledAt && !!row.twoFactorSecret;
           token.twoFactorEnabled = enabled;
-          token.requires2faEnrolment = !enabled;
-        }
-        if (typeof requires === "boolean") {
-          token.requires2faEnrolment = requires;
+          token.requires2faEnrolment =
+            rolesRequiring2fa(row.role) &&
+            !enabled &&
+            adminTwoFactorEnforced();
         }
       }
 
@@ -610,6 +610,26 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
     },
   },
   events: {
+    async signIn(message) {
+      const user = message.user as {
+        id?: string;
+        email?: string | null;
+        role?: string;
+      };
+      if (!user?.id) return;
+      try {
+        const { attachGuestOrdersForCustomer } = await import(
+          "@/modules/orders/attach-guest-orders"
+        );
+        await attachGuestOrdersForCustomer({
+          userId: user.id,
+          email: user.email,
+          role: user.role ?? "CUSTOMER",
+        });
+      } catch {
+        // Non-fatal — order history can still match by guest email in queries.
+      }
+    },
     async signOut(message) {
       const sessionId =
         "token" in message &&

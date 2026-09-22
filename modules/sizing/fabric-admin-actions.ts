@@ -19,9 +19,11 @@ import { requirePermission } from "@/modules/auth";
 import { completeUpload } from "@/modules/platform/assets";
 import { parseMeasureInput } from "@/modules/ui";
 import { parseMetresInput } from "@/modules/ui/metres/format";
+import { insertFabricLotExpenditureTx } from "@/modules/inventory/fabric-purchase-expenditure";
 import { refreshFabricLotStatus } from "@/modules/inventory/lot-status";
 import { ensureFabricColourways } from "@/modules/inventory/ledger-queries";
 import { revalidateFabricStockPaths } from "@/modules/inventory/revalidate-fabric-paths";
+import { revalidatePath } from "next/cache";
 
 import type { BlockSaveResult } from "./types";
 import { listFabrics, getFabric } from "./fabric-archetype-actions";
@@ -93,6 +95,15 @@ async function insertFabricLot(input: {
       note: `Received — lot ${input.lotCode}`,
       actorId: input.actorId,
     });
+
+    const expenditure = await insertFabricLotExpenditureTx(tx, {
+      fabricId: input.fabricId,
+      lotCode: input.lotCode,
+      metersHundredths: input.metersHundredths,
+      costPerMeterMinor: input.costPerMeterMinor,
+      actorId: input.actorId,
+    });
+
     await insertAuditLog(tx as unknown as Database, {
       id: uuidv7(),
       actorId: input.actorId,
@@ -106,9 +117,13 @@ async function insertFabricLot(input: {
         lotCode: input.lotCode,
         meters: input.metersHundredths,
         colourNotes,
+        costPerMeterMinor: input.costPerMeterMinor,
+        expenditureId: expenditure?.expenditureId ?? null,
+        expenditureMinor: expenditure?.amountMinor ?? 0,
       },
     });
   });
+  revalidatePath("/admin/finance");
   return lotId;
 }
 

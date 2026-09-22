@@ -4,7 +4,7 @@ import { redirect } from "@/i18n/routing";
 import { auth } from "@/auth";
 import { getOrSetAnonToken } from "@/modules/measure/anon-cookie";
 import { loadActiveCart } from "@/modules/cart/queries";
-import { CheckoutFlow, getCheckoutCodStatus } from "@/modules/checkout";
+import { CheckoutFlow, getCheckoutCodStatus, getCheckoutShippingQuote } from "@/modules/checkout";
 import { ShopPageContainer } from "@/modules/shop/shell/page-container";
 
 export default async function CheckoutPage() {
@@ -18,7 +18,10 @@ export default async function CheckoutPage() {
     redirect({ href: "/", locale });
   }
 
-  const codStatus = await getCheckoutCodStatus();
+  const [codStatus, shipping] = await Promise.all([
+    getCheckoutCodStatus(),
+    getCheckoutShippingQuote(),
+  ]);
 
   return (
     <ShopPageContainer>
@@ -27,6 +30,8 @@ export default async function CheckoutPage() {
           cart={cart}
           isSignedIn={Boolean(userId)}
           codDisabled={codStatus.codDisabled}
+          shippingMinor={shipping.shippingMinor}
+          shippingLabel={shipping.label}
         />
       </div>
     </ShopPageContainer>

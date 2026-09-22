@@ -71,7 +71,7 @@ export const MESSAGE_TEMPLATE_SEEDS: Array<{
     subject: "We have your order {{orderNumber}}",
     body: `Thank you, {{customerName}}. We have your order {{orderNumber}}.
 
-We're checking your payment now. As soon as it clears, we'll confirm and prepare your pieces for dispatch.
+If you chose cash on delivery, pay when it arrives. If you paid by transfer or online, you're all set — we'll prepare your pieces next.
 
 You can follow every step here: {{trackUrl}}`,
   },
@@ -79,7 +79,7 @@ You can follow every step here: {{trackUrl}}`,
     key: "order.confirmed",
     locale: "en",
     subject: "Order confirmed — {{orderNumber}}",
-    body: `Good news, {{customerName}} — your payment is confirmed and order {{orderNumber}} is now being prepared.
+    body: `Good news, {{customerName}} — order {{orderNumber}} is confirmed and being prepared.
 
 We'll message you with the courier and tracking number the moment it ships.
 

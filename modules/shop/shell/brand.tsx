@@ -82,7 +82,7 @@ export function AksStoreBrandLink({
     <Link
       href={href as "/"}
       className={["brand", className].filter(Boolean).join(" ")}
-      aria-label="AKS — Minimalist Luxury, home"
+      aria-label="AKS home"
     >
       <AksBrandLogo className="brand-logo" variant="header" />
     </Link>

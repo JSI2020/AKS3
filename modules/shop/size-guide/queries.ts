@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { asc, eq, inArray } from "drizzle-orm";
 
 import {
   db,
@@ -36,6 +36,8 @@ export type SizeGuideChartPublic = {
 
 /**
  * Active house size blocks for the storefront size guide.
+ * Prefer default blocks; if none are marked default, fall back to any active
+ * block that has measurement rows so the page is never empty after seed.
  * Values are hundredths of an inch — render with <Measure>.
  */
 export async function listSizeGuideCharts(): Promise<SizeGuideChartPublic[]> {
@@ -45,6 +47,7 @@ export async function listSizeGuideCharts(): Promise<SizeGuideChartPublic[]> {
       name: sizeBlocks.name,
       sizeLabels: sizeBlocks.sizeLabels,
       baseSizeLabel: sizeBlocks.baseSizeLabel,
+      isDefault: sizeBlocks.isDefault,
       categoryKey: garmentCategories.key,
       categoryName: garmentCategories.name,
     })
@@ -53,12 +56,14 @@ export async function listSizeGuideCharts(): Promise<SizeGuideChartPublic[]> {
       garmentCategories,
       eq(sizeBlocks.categoryId, garmentCategories.id),
     )
-    .where(and(eq(sizeBlocks.active, true), eq(sizeBlocks.isDefault, true)))
+    .where(eq(sizeBlocks.active, true))
     .orderBy(asc(garmentCategories.name), asc(sizeBlocks.name));
 
   if (blocks.length === 0) return [];
 
-  const blockIds = blocks.map((b) => b.id);
+  const defaults = blocks.filter((b) => b.isDefault);
+  const preferred = defaults.length > 0 ? defaults : blocks;
+  const blockIds = preferred.map((b) => b.id);
   const allRows = await db
     .select({
       blockId: sizeBlockRows.blockId,
@@ -81,7 +86,7 @@ export async function listSizeGuideCharts(): Promise<SizeGuideChartPublic[]> {
 
   const charts: SizeGuideChartPublic[] = [];
 
-  for (const block of blocks) {
+  for (const block of preferred) {
     const rows = rowsByBlock.get(block.id) ?? [];
     if (rows.length === 0) continue;
 
@@ -125,5 +130,12 @@ export async function listSizeGuideCharts(): Promise<SizeGuideChartPublic[]> {
     });
   }
 
-  return charts;
+  // Prefer house wearable charts (XS–XL). Drop one-size fabric/accessory
+  // placeholders when real size charts are present.
+  const wearable = charts.filter(
+    (c) =>
+      c.sizeLabels.length > 1 &&
+      !c.sizeLabels.every((l) => /one\s*size/i.test(l)),
+  );
+  return wearable.length > 0 ? wearable : charts;
 }

@@ -1,0 +1,768 @@
+{
+  "generatedAt": "2026-09-15T23:16:31.921Z",
+  "base": "http://127.0.0.1:3000",
+  "summary": {
+    "total": 84,
+    "passed": 84,
+    "failed": 0
+  },
+  "designSlug": "production-design-01a0a758-8289-75b5-a18e-10ecdc62c27f",
+  "results": [
+    {
+      "id": "S-01",
+      "url": "http://127.0.0.1:3000/",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 964
+    },
+    {
+      "id": "S-02",
+      "url": "http://127.0.0.1:3000/collections",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 699
+    },
+    {
+      "id": "S-03",
+      "url": "http://127.0.0.1:3000/collections/essentials",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 659
+    },
+    {
+      "id": "S-04",
+      "url": "http://127.0.0.1:3000/collections/tailored",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 900
+    },
+    {
+      "id": "S-05",
+      "url": "http://127.0.0.1:3000/collections/occasion",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 629
+    },
+    {
+      "id": "S-06",
+      "url": "http://127.0.0.1:3000/collections/signature",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 608
+    },
+    {
+      "id": "S-07",
+      "url": "http://127.0.0.1:3000/collections/separates",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 577
+    },
+    {
+      "id": "S-08",
+      "url": "http://127.0.0.1:3000/collections/all",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 806
+    },
+    {
+      "id": "S-09",
+      "url": "http://127.0.0.1:3000/collections/new",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 764
+    },
+    {
+      "id": "S-10",
+      "url": "http://127.0.0.1:3000/collections/best-sellers",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 598
+    },
+    {
+      "id": "S-11",
+      "url": "http://127.0.0.1:3000/search?q=kurta",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 500
+    },
+    {
+      "id": "S-12",
+      "url": "http://127.0.0.1:3000/size-guide",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 2320
+    },
+    {
+      "id": "S-13",
+      "url": "http://127.0.0.1:3000/fabrics",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 1052
+    },
+    {
+      "id": "S-14",
+      "url": "http://127.0.0.1:3000/wishlist",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 712
+    },
+    {
+      "id": "S-15",
+      "url": "http://127.0.0.1:3000/pages/faq",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 542
+    },
+    {
+      "id": "S-16",
+      "url": "http://127.0.0.1:3000/pages/shipping-returns",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 440
+    },
+    {
+      "id": "S-17",
+      "url": "http://127.0.0.1:3000/pages/privacy-terms",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 404
+    },
+    {
+      "id": "S-18",
+      "url": "http://127.0.0.1:3000/pages/atelier",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 455
+    },
+    {
+      "id": "S-19",
+      "url": "http://127.0.0.1:3000/pages/construction",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 526
+    },
+    {
+      "id": "S-20",
+      "url": "http://127.0.0.1:3000/checkout",
+      "status": 307,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 402
+    },
+    {
+      "id": "S-21",
+      "url": "http://127.0.0.1:3000/account/login",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 458
+    },
+    {
+      "id": "S-22",
+      "url": "http://127.0.0.1:3000/account/orders",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 509
+    },
+    {
+      "id": "S-24",
+      "url": "http://127.0.0.1:3000/api/health",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 595
+    },
+    {
+      "id": "S-25",
+      "url": "http://127.0.0.1:3000/api/search?q=a",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "",
+      "ms": 403
+    },
+    {
+      "id": "S-PDP-01",
+      "url": "http://127.0.0.1:3000/designs/production-design-01a0a758-8289-75b5-a18e-10ecdc62c27f",
+      "status": 200,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "slug=production-design-01a0a758-8289-75b5-a18e-10ecdc62c27f",
+      "ms": 518
+    },
+    {
+      "id": "S-23",
+      "url": "http://127.0.0.1:3000/designs/production-design-01a0a758-8289-75b5-a18e-10ecdc62c27f/measure",
+      "status": 307,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "MTM retired — expect redirect to PDP",
+      "ms": 430
+    },
+    {
+      "id": "C-empty",
+      "url": "http://127.0.0.1:3000/checkout",
+      "status": 307,
+      "ok": true,
+      "expect": "redirect home",
+      "note": "location=/ final=http://127.0.0.1:3000/",
+      "ms": 0
+    },
+    {
+      "id": "N-04-1",
+      "url": "http://127.0.0.1:3000/api/assets/serve?key=../.env",
+      "status": 404,
+      "ok": true,
+      "expect": "not 200",
+      "note": "path traversal probe",
+      "ms": 0
+    },
+    {
+      "id": "N-04-2",
+      "url": "http://127.0.0.1:3000/api/assets/serve?key=..%2F.env",
+      "status": 404,
+      "ok": true,
+      "expect": "not 200",
+      "note": "path traversal probe",
+      "ms": 0
+    },
+    {
+      "id": "N-04-3",
+      "url": "http://127.0.0.1:3000/api/assets/serve?key=C:/Windows/win.ini",
+      "status": 404,
+      "ok": true,
+      "expect": "not 200",
+      "note": "path traversal probe",
+      "ms": 0
+    },
+    {
+      "id": "N-04-4",
+      "url": "http://127.0.0.1:3000/api/assets/serve?key=..\\..\\package.json",
+      "status": 404,
+      "ok": true,
+      "expect": "not 200",
+      "note": "path traversal probe",
+      "ms": 0
+    },
+    {
+      "id": "A-HTTP-01",
+      "url": "http://127.0.0.1:3000/admin",
+      "status": 307,
+      "ok": true,
+      "expect": "2xx|3xx",
+      "note": "unauth smoke",
+      "ms": 325
+    },
+    {
+      "id": "A-HTTP-02",
+      "url": "http://127.0.0.1:3000/admin/orders",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 337
+    },
+    {
+      "id": "A-HTTP-03",
+      "url": "http://127.0.0.1:3000/admin/orders/new",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 278
+    },
+    {
+      "id": "A-HTTP-04",
+      "url": "http://127.0.0.1:3000/admin/customers",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 302
+    },
+    {
+      "id": "A-HTTP-05",
+      "url": "http://127.0.0.1:3000/admin/discounts",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 337
+    },
+    {
+      "id": "A-HTTP-06",
+      "url": "http://127.0.0.1:3000/admin/content",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 291
+    },
+    {
+      "id": "A-HTTP-07",
+      "url": "http://127.0.0.1:3000/admin/content/homepage",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 292
+    },
+    {
+      "id": "A-HTTP-08",
+      "url": "http://127.0.0.1:3000/admin/content/pages",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 501
+    },
+    {
+      "id": "A-HTTP-09",
+      "url": "http://127.0.0.1:3000/admin/content/lists",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 301
+    },
+    {
+      "id": "A-HTTP-10",
+      "url": "http://127.0.0.1:3000/admin/content/nav",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 286
+    },
+    {
+      "id": "A-HTTP-11",
+      "url": "http://127.0.0.1:3000/admin/content/collections",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 328
+    },
+    {
+      "id": "A-HTTP-12",
+      "url": "http://127.0.0.1:3000/admin/content/settings",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 299
+    },
+    {
+      "id": "A-HTTP-13",
+      "url": "http://127.0.0.1:3000/admin/production",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 291
+    },
+    {
+      "id": "A-HTTP-14",
+      "url": "http://127.0.0.1:3000/admin/inventory",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 267
+    },
+    {
+      "id": "A-HTTP-15",
+      "url": "http://127.0.0.1:3000/admin/inventory/designs",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 302
+    },
+    {
+      "id": "A-HTTP-16",
+      "url": "http://127.0.0.1:3000/admin/inventory/fabrics",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 301
+    },
+    {
+      "id": "A-HTTP-17",
+      "url": "http://127.0.0.1:3000/admin/inventory/packing",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 318
+    },
+    {
+      "id": "A-HTTP-18",
+      "url": "http://127.0.0.1:3000/admin/inventory/trims",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 500
+    },
+    {
+      "id": "A-HTTP-19",
+      "url": "http://127.0.0.1:3000/admin/fabrics",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 358
+    },
+    {
+      "id": "A-HTTP-20",
+      "url": "http://127.0.0.1:3000/admin/fabrics/new",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 515
+    },
+    {
+      "id": "A-HTTP-21",
+      "url": "http://127.0.0.1:3000/admin/designs",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 283
+    },
+    {
+      "id": "A-HTTP-22",
+      "url": "http://127.0.0.1:3000/admin/designs/new",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 291
+    },
+    {
+      "id": "A-HTTP-23",
+      "url": "http://127.0.0.1:3000/admin/studio",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 289
+    },
+    {
+      "id": "A-HTTP-24",
+      "url": "http://127.0.0.1:3000/admin/studio/ai",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 308
+    },
+    {
+      "id": "A-HTTP-25",
+      "url": "http://127.0.0.1:3000/admin/photoreal",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 301
+    },
+    {
+      "id": "A-HTTP-26",
+      "url": "http://127.0.0.1:3000/admin/photoreal/gallery",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 287
+    },
+    {
+      "id": "A-HTTP-27",
+      "url": "http://127.0.0.1:3000/admin/finance",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 349
+    },
+    {
+      "id": "A-HTTP-28",
+      "url": "http://127.0.0.1:3000/admin/money",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 286
+    },
+    {
+      "id": "A-HTTP-29",
+      "url": "http://127.0.0.1:3000/admin/payments/cod",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 368
+    },
+    {
+      "id": "A-HTTP-30",
+      "url": "http://127.0.0.1:3000/admin/payments/verification",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 301
+    },
+    {
+      "id": "A-HTTP-31",
+      "url": "http://127.0.0.1:3000/admin/tryon",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 278
+    },
+    {
+      "id": "A-HTTP-32",
+      "url": "http://127.0.0.1:3000/admin/insights",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 499
+    },
+    {
+      "id": "A-HTTP-33",
+      "url": "http://127.0.0.1:3000/admin/settings",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 267
+    },
+    {
+      "id": "A-HTTP-34",
+      "url": "http://127.0.0.1:3000/admin/settings/staff",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 285
+    },
+    {
+      "id": "A-HTTP-35",
+      "url": "http://127.0.0.1:3000/admin/settings/roles",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 289
+    },
+    {
+      "id": "A-HTTP-36",
+      "url": "http://127.0.0.1:3000/admin/settings/storefront",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 309
+    },
+    {
+      "id": "A-HTTP-37",
+      "url": "http://127.0.0.1:3000/admin/settings/studio",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 292
+    },
+    {
+      "id": "A-HTTP-38",
+      "url": "http://127.0.0.1:3000/admin/settings/sizing/categories",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 286
+    },
+    {
+      "id": "A-HTTP-39",
+      "url": "http://127.0.0.1:3000/admin/settings/sizing/blocks",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 302
+    },
+    {
+      "id": "A-HTTP-40",
+      "url": "http://127.0.0.1:3000/admin/settings/sizing/fit-profiles",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 404
+    },
+    {
+      "id": "A-HTTP-41",
+      "url": "http://127.0.0.1:3000/admin/settings/sizing/archetypes",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 323
+    },
+    {
+      "id": "A-HTTP-42",
+      "url": "http://127.0.0.1:3000/admin/settings/sizing/custom-limits",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 284
+    },
+    {
+      "id": "A-HTTP-43",
+      "url": "http://127.0.0.1:3000/admin/settings/sizing/chart",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 332
+    },
+    {
+      "id": "A-HTTP-44",
+      "url": "http://127.0.0.1:3000/admin/settings/sizing/chart/grid",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 551
+    },
+    {
+      "id": "A-HTTP-45",
+      "url": "http://127.0.0.1:3000/admin/settings/sizing/chart/styles",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 290
+    },
+    {
+      "id": "A-HTTP-46",
+      "url": "http://127.0.0.1:3000/admin/settings/sizing/chart/templates",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 300
+    },
+    {
+      "id": "A-HTTP-47",
+      "url": "http://127.0.0.1:3000/admin/settings/sizing/chart/recognition",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 335
+    },
+    {
+      "id": "A-HTTP-48",
+      "url": "http://127.0.0.1:3000/admin/settings/sizing/chart/fit-events",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 291
+    },
+    {
+      "id": "A-HTTP-49",
+      "url": "http://127.0.0.1:3000/admin/login",
+      "status": 200,
+      "ok": true,
+      "expect": "login reachable",
+      "note": "unauth smoke",
+      "ms": 278
+    },
+    {
+      "id": "A-HTTP-50",
+      "url": "http://127.0.0.1:3000/admin/tokens",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 279
+    },
+    {
+      "id": "A-HTTP-51",
+      "url": "http://127.0.0.1:3000/admin/assets-test",
+      "status": 307,
+      "ok": true,
+      "expect": "<500 (login redirect or page)",
+      "note": "unauth smoke",
+      "ms": 279
+    },
+    {
+      "id": "N-03",
+      "url": "http://127.0.0.1:3000/api/webhooks/safepay",
+      "status": 400,
+      "ok": true,
+      "expect": "4xx reject",
+      "note": "unsigned webhook body",
+      "ms": 0
+    },
+    {
+      "id": "S-brand",
+      "url": "http://127.0.0.1:3000/",
+      "status": 200,
+      "ok": true,
+      "expect": "body contains AKS",
+      "note": "brand signal",
+      "ms": 0
+    }
+  ]
+}

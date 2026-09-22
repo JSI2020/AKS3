@@ -3,6 +3,7 @@ export {
   assignProductionJobAction,
   blockProductionJobAction,
   recordQcCheckAction,
+  startProductionJobAction,
 } from "./actions";
 export {
   PRODUCTION_JOB_STAGES,

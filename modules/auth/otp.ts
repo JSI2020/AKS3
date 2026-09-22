@@ -7,7 +7,8 @@ import { enqueue } from "@/modules/platform/outbox";
 import { verificationCodeEmail } from "@/modules/messaging/email-templates";
 
 export const OTP_LENGTH = 6;
-export const OTP_TTL_MS = 24 * 60 * 60 * 1000;
+/** Login / phone OTP lifetime — short window; rate limits cover brute force. */
+export const OTP_TTL_MS = 10 * 60 * 1000;
 
 export function hashOtp(code: string): string {
   return createHash("sha256").update(code, "utf8").digest("hex");
@@ -56,13 +57,17 @@ export async function issueEmailOtp(params: {
     );
   });
 
-  if (process.env.NODE_ENV !== "production") {
+  const allowDevOtp =
+    process.env.NODE_ENV !== "production" &&
+    process.env.AKS_ALLOW_DEV_OTP !== "0";
+
+  if (allowDevOtp) {
     console.log(
-      `\n[dev] Admin sign-in code for ${email}: ${code} (valid 24 hours)\n`,
+      `\n[dev] Admin sign-in code for ${email}: ${code} (valid 10 minutes)\n`,
     );
   }
 
-  return { expiresAt, devCode: process.env.NODE_ENV !== "production" ? code : undefined };
+  return { expiresAt, devCode: allowDevOtp ? code : undefined };
 }
 
 /**

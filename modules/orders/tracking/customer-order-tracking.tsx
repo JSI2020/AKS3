@@ -49,6 +49,22 @@ export async function CustomerOrderTracking({
         <ProductionTimeline steps={order.timeline} photos={order.photos} />
       </div>
 
+      {order.trackingNumber ? (
+        <div className="border-t border-ink/12 px-8 py-5">
+          <p className="text-[12px] uppercase tracking-[0.08em] text-ink/55">
+            Shipment
+          </p>
+          <p className="mt-2 text-[15px] text-ink">
+            {order.courierName ? `${order.courierName} · ` : null}
+            <span className="font-data">{order.trackingNumber}</span>
+          </p>
+          <p className="mt-1 text-[13px] text-ink/65">
+            Use this AWB on the courier&apos;s website or app to follow the
+            parcel.
+          </p>
+        </div>
+      ) : null}
+
       <div className="border-t border-ink/12 px-8 py-5 text-center text-[12.5px] text-ink/55">
         Questions?{" "}
         <a

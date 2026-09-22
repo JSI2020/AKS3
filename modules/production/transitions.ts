@@ -89,7 +89,9 @@ export function registerProductionJobTransitions(): void {
         }
       }
 
-      // First leave from the cutting column: consume reservation + order → CUTTING.
+      // Cutting begin (fabric consume + order → CUTTING) also runs from
+      // startProductionJobAction. Guards below are no-ops once order left
+      // MEASUREMENTS_CONFIRMED — safe if Start already ran.
       let orderStatus = ctx.orderStatus;
       if (
         fromStage === "CUTTING" &&
@@ -135,6 +137,7 @@ export function registerProductionJobTransitions(): void {
         )
         .returning({ id: productionJobs.id });
 
+      // P24: board advances sync the parent order here — single write path from kanban.
       if (rows.length === 1) {
         await syncOrderStatusForJobStage(ctx.orderId, toStage, tx);
       }

@@ -24,6 +24,7 @@ import {
   computeDepositAmounts,
   isPaymentPlanAllowed,
 } from "./payment-plans";
+import { quoteShipping } from "./shipping";
 import { validateCheckoutAddress, validatePaymentPlan } from "./schemas";
 import type {
   ApplyCheckoutDiscountResult,
@@ -37,6 +38,7 @@ import {
   validateCartForCheckout,
   type ValidatedCartLine,
 } from "./validate";
+import { getSiteSettings } from "@/modules/content/site-settings";
 
 async function getCartContext(): Promise<CartContext> {
   const session = await auth();
@@ -76,7 +78,8 @@ export async function applyCheckoutDiscount(input: {
     };
   }
 
-  const shippingMinor = 0;
+  const shippingQuote = quoteShipping(await getSiteSettings());
+  const shippingMinor = shippingQuote.shippingMinor;
   const taxMinor = 0;
 
   const evaluation = await evaluateCheckoutDiscounts({
@@ -126,6 +129,15 @@ export async function placeOrder(
   }
 
   const ctx = await getCartContext();
+  if (!ctx.userId) {
+    const email = addressResult.data.guestEmail?.trim();
+    if (!email || !email.includes("@")) {
+      return {
+        ok: false,
+        error: "Enter an email so you can track this order.",
+      };
+    }
+  }
   const cartId = await getActiveCartId(ctx);
   if (!cartId) {
     return { ok: false, error: "Your cart is empty." };
@@ -158,7 +170,8 @@ export async function placeOrder(
   }
 
   const subtotalMinor = validation.subtotalMinor;
-  const shippingMinor = 0;
+  const shippingQuote = quoteShipping(await getSiteSettings());
+  const shippingMinor = shippingQuote.shippingMinor;
   const taxMinor = 0;
 
   const evaluation = await evaluateCheckoutDiscounts({
@@ -297,6 +310,10 @@ export async function getCheckoutCodStatus() {
   return getCustomerCodStatus(session?.user?.id ?? null);
 }
 
+export async function getCheckoutShippingQuote() {
+  return quoteShipping(await getSiteSettings());
+}
+
 export async function validateCheckoutCart() {
   const ctx = await getCartContext();
   const cartId = await getActiveCartId(ctx);
@@ -310,5 +327,12 @@ export async function validateCheckoutCart() {
   if (!result.ok) {
     return { ok: false as const, issues: result.issues };
   }
-  return { ok: true as const, lines: result.lines, subtotalMinor: result.subtotalMinor };
+  const shipping = quoteShipping(await getSiteSettings());
+  return {
+    ok: true as const,
+    lines: result.lines,
+    subtotalMinor: result.subtotalMinor,
+    shippingMinor: shipping.shippingMinor,
+    shippingLabel: shipping.label,
+  };
 }

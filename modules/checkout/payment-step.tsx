@@ -6,8 +6,8 @@ import { Money } from "@/modules/ui";
 
 import {
   computeDepositAmounts,
-  DEPOSIT_POLICY_COPY,
   getAvailablePaymentPlans,
+  PAYMENT_POLICY_COPY,
   type PaymentPlan,
 } from "./payment-plans";
 import type { CheckoutDiscountPreview } from "./types";
@@ -16,6 +16,7 @@ import { DiscountCodeField } from "./discount-code-field";
 type Props = {
   lines: { sizeMode: "STANDARD" | "MADE_TO_MEASURE" }[];
   subtotalMinor: number;
+  shippingMinor?: number;
   selected: PaymentPlan | null;
   codDisabled?: boolean;
   discountCode: string;
@@ -29,6 +30,7 @@ type Props = {
 export function PaymentStep({
   lines,
   subtotalMinor,
+  shippingMinor = 0,
   selected,
   codDisabled = false,
   discountCode,
@@ -38,10 +40,14 @@ export function PaymentStep({
   onBack,
   onContinue,
 }: Props) {
-  const [plan, setPlan] = useState<PaymentPlan | null>(selected);
-  const [error, setError] = useState<string | null>(null);
   const options = getAvailablePaymentPlans(lines, { codDisabled });
-  const effectiveTotalMinor = discountPreview?.totalMinor ?? subtotalMinor;
+  const defaultPlan =
+    selected ??
+    (options.length === 1 && !options[0]!.disabled ? options[0]!.plan : null);
+  const [plan, setPlan] = useState<PaymentPlan | null>(defaultPlan);
+  const [error, setError] = useState<string | null>(null);
+  const effectiveTotalMinor =
+    discountPreview?.totalMinor ?? subtotalMinor + shippingMinor;
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -51,7 +57,7 @@ export function PaymentStep({
     }
     const option = options.find((o) => o.plan === plan);
     if (option?.disabled) {
-      setError(option.disabledReason ?? "This payment plan is not available.");
+      setError(option.disabledReason ?? "This payment option is not available.");
       return;
     }
     setError(null);
@@ -61,20 +67,19 @@ export function PaymentStep({
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <h2 className="font-display text-[20px] text-ink">Payment plan</h2>
+        <h2 className="font-display text-[20px] text-ink">Payment</h2>
         <p className="mt-1 text-[14px] leading-relaxed text-ink/65">
-          Pay half now to begin, half when it is ready — for standard sizes
-          only. Made-to-measure needs a higher deposit because your piece cannot
-          be resold.
+          Soft launch is cash on delivery — pay the full amount when your order
+          arrives.
         </p>
       </div>
 
       <p className="border border-greige-deep px-4 py-3 text-[14px] leading-relaxed text-ink/75">
-        {DEPOSIT_POLICY_COPY}
+        {PAYMENT_POLICY_COPY}
       </p>
 
       <fieldset className="space-y-3">
-        <legend className="sr-only">Choose a payment plan</legend>
+        <legend className="sr-only">Choose how to pay</legend>
         {options.map((option) => {
           const amounts = computeDepositAmounts({
             totalMinor: effectiveTotalMinor,
@@ -112,21 +117,33 @@ export function PaymentStep({
                   </p>
                   {!option.disabled ? (
                     <p className="mt-2 text-[13px] text-ink/60">
-                      Deposit{" "}
-                      <Money
-                        value={amounts.depositAmountMinor}
-                        className="inline"
-                      />
-                      {amounts.balanceAmountMinor > 0 ? (
+                      {amounts.depositAmountMinor > 0 ? (
                         <>
-                          {" "}
-                          · Balance on delivery{" "}
+                          Pay now{" "}
+                          <Money
+                            value={amounts.depositAmountMinor}
+                            className="inline"
+                          />
+                          {amounts.balanceAmountMinor > 0 ? (
+                            <>
+                              {" "}
+                              · Balance{" "}
+                              <Money
+                                value={amounts.balanceAmountMinor}
+                                className="inline"
+                              />
+                            </>
+                          ) : null}
+                        </>
+                      ) : (
+                        <>
+                          Pay on delivery{" "}
                           <Money
                             value={amounts.balanceAmountMinor}
                             className="inline"
                           />
                         </>
-                      ) : null}
+                      )}
                     </p>
                   ) : (
                     <p className="mt-2 text-[13px] text-madder">

@@ -44,10 +44,22 @@ export async function issuePhoneOtp(params: {
   });
 
   // Delivery is outside the DB transaction so a WhatsApp outage cannot roll back
-  // a stored code — but in dev we skip the send entirely and surface the code.
-  if (process.env.NODE_ENV !== "production") {
+  // a stored code — but in dev we skip the send entirely and surface the code
+  // only when AKS_ALLOW_DEV_OTP=1 (never when NODE_ENV=production).
+  const allowDevOtp =
+    process.env.NODE_ENV !== "production" &&
+    process.env.AKS_ALLOW_DEV_OTP !== "0";
+
+  if (allowDevOtp) {
     console.log(`\n[dev] WhatsApp sign-in code for ${msisdn}: ${code}\n`);
     return { expiresAt, devCode: code };
+  }
+
+  if (process.env.NODE_ENV !== "production") {
+    console.log(
+      `\n[dev] WhatsApp OTP issued for ${msisdn} (AKS_ALLOW_DEV_OTP=0 — code not printed)\n`,
+    );
+    return { expiresAt };
   }
 
   await sendWhatsappText({

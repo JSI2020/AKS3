@@ -445,8 +445,9 @@ function ExpenditurePanel({
     <div>
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <p className="max-w-xl text-[13px] text-ink/55">
-          Rent, salaries, marketing, equipment, bills — everything paid out that
-          isn&apos;t fabric or a per-order cost.
+          Rent, salaries, marketing, equipment, bills — plus Materials logged
+          automatically when you record a fabric lot (metres × cost). Do not
+          enter the same cloth purchase twice.
         </p>
         <button
           type="button"

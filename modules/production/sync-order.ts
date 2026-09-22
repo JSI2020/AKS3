@@ -29,7 +29,10 @@ const ORDER_STATUS_RANK: Record<string, number> = {
   READY_TO_SHIP: 60,
 };
 
-/** Advance parent order status when a job reaches a new stage. */
+/** Advance parent order status when a job reaches a new stage.
+ * Called from production_job stage transitions (board advance path) — keeps
+ * order detail and kanban aligned without a second manual order write.
+ */
 export async function syncOrderStatusForJobStage(
   orderId: string,
   jobStage: ProductionJobStage,

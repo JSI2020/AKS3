@@ -55,7 +55,10 @@ export function registerOrderTransitions(): void {
         updatedAt: new Date(),
       };
 
-      if (to === "AWAITING_DEPOSIT" && from === "DRAFT") {
+      if (
+        (to === "AWAITING_DEPOSIT" || to === "DEPOSIT_PAID") &&
+        from === "DRAFT"
+      ) {
         patch.placedAt = new Date();
       }
       if (to === "CANCELLED" || to === "REFUND_PENDING") {
@@ -69,7 +72,12 @@ export function registerOrderTransitions(): void {
         .returning({ id: orders.id });
 
       if (rows.length === 1) {
-        if (to === "AWAITING_DEPOSIT" && from === "DRAFT") {
+        // Reserve RTW when the order is placed — prepaid awaits deposit, COD
+        // jumps straight to DEPOSIT_PAID (nothing due online).
+        if (
+          from === "DRAFT" &&
+          (to === "AWAITING_DEPOSIT" || to === "DEPOSIT_PAID")
+        ) {
           await reserveRtwForOrder(id, tx);
         }
         if (to === "MEASUREMENTS_CONFIRMED") {

@@ -6,11 +6,20 @@ import {
   PermissionDeniedError,
   UnauthenticatedError,
 } from "@/modules/auth";
+import { DESIGN_AWAITING_REVIEW_STATUSES } from "@/modules/admin/today/constants";
 import { DesignsCatalog } from "@/modules/designs/designs-catalog";
 import { listStudioCatalogGrouped } from "@/modules/designs/studio-catalog";
 
 /** Designs hub — photo catalogue matching AKS_Design_Pipeline_Redesign_2. */
-export default async function DesignsAdminPage() {
+export default async function DesignsAdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ awaitingReview?: string }>;
+}) {
+  const sp = await searchParams;
+  const awaitingReview =
+    sp.awaitingReview === "true" || sp.awaitingReview === "1";
+
   let groups;
   try {
     groups = await listStudioCatalogGrouped();
@@ -22,6 +31,16 @@ export default async function DesignsAdminPage() {
       redirect("/admin");
     }
     throw e;
+  }
+
+  if (awaitingReview) {
+    const review = new Set<string>(DESIGN_AWAITING_REVIEW_STATUSES);
+    groups = groups
+      .map((g) => ({
+        ...g,
+        designs: g.designs.filter((d) => review.has(d.status)),
+      }))
+      .filter((g) => g.designs.length > 0);
   }
 
   const total = groups.reduce((n, g) => n + g.designs.length, 0);
@@ -37,9 +56,21 @@ export default async function DesignsAdminPage() {
             Designs
           </h1>
           <p className="mt-2 max-w-xl text-[13px] text-ink/55">
-            Every look, by category — photos, colours, sizes.
+            {awaitingReview
+              ? "Pipeline designs waiting on review or ready to publish."
+              : "Every look, by category — photos, colours, sizes."}
             {total > 0 ? ` ${total} designs shown.` : ""}
           </p>
+          {awaitingReview ? (
+            <p className="mt-2">
+              <Link
+                href="/admin/designs"
+                className="text-[12px] text-ink/55 underline-offset-2 hover:text-ink hover:underline"
+              >
+                Show all designs
+              </Link>
+            </p>
+          ) : null}
         </div>
         <Link
           href="/admin/designs/new"
@@ -52,19 +83,35 @@ export default async function DesignsAdminPage() {
       {total === 0 ? (
         <EmptyState
           tone="on-greige"
-          title="No designs yet"
-          description="Create a design with photos, sizes, colours, and price — then publish when ready."
+          title={awaitingReview ? "Nothing awaiting review" : "No designs yet"}
+          description={
+            awaitingReview
+              ? "No designs are in a review or ready-to-publish step right now."
+              : "Create a design with photos, sizes, colours, and price — then publish when ready."
+          }
           action={
-            <Link
-              href="/admin/designs/new"
-              className="bg-ink px-5 py-2.5 text-[12px] uppercase tracking-[0.08em] text-milk"
-            >
-              + New design
-            </Link>
+            awaitingReview ? (
+              <Link
+                href="/admin/designs"
+                className="bg-ink px-5 py-2.5 text-[12px] uppercase tracking-[0.08em] text-milk"
+              >
+                Browse all designs
+              </Link>
+            ) : (
+              <Link
+                href="/admin/designs/new"
+                className="bg-ink px-5 py-2.5 text-[12px] uppercase tracking-[0.08em] text-milk"
+              >
+                + New design
+              </Link>
+            )
           }
         />
       ) : (
-        <DesignsCatalog groups={groups} />
+        <DesignsCatalog
+          groups={groups}
+          initialFilter={awaitingReview ? "review" : "all"}
+        />
       )}
     </div>
   );

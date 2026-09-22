@@ -8,6 +8,7 @@ export {
   ensureObjectInR2,
   deleteObject,
   getObjectBytes,
+  assertSafeAssetKey,
   uploadBufferToR2,
   completeUpload,
   deleteAsset,

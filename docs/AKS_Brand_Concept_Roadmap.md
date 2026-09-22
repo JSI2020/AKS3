@@ -120,7 +120,7 @@ Texture and weave replace embellishment. The cloth is the first luxury signal sh
 4. **The Wrap** — heritage angrakha + paneled shalwar  
 5. **Layered** — kalidaar kurta + long waistcoat + double-farshi  
 
-Price band (positioning, not a hard rule): **PKR 18,000 – 65,000** quiet-luxury pret; MTM tier may sit above. Bridal couture is not the fight.
+Price band (positioning, not a hard rule): **PKR 18,000 – 65,000** quiet-luxury pret. A later made-to-measure tier may sit above. Bridal couture is not the fight.
 
 ---
 
@@ -129,16 +129,16 @@ Price band (positioning, not a hard rule): **PKR 18,000 – 65,000** quiet-luxur
 | Phase | Intent | AKS app today |
 |---|---|---|
 | **0 Foundation** | Identity, blocks, fabric partners, atelier QC, White Collection samples | UI tokens + brand voice docs; sizing/blocks in admin; fabric module; studio pipeline |
-| **1 Prototype & proof** | Physical fit, motion photography, freeze construction standard | Measure flow + size engine exist; imagery still thin without studio/R2 assets |
-| **2 Soft launch** | Few MTO slots; IG + simple site; White Collection | **Full shop + admin already exceed “simple site”** — use them; keep catalogue small and on-brand |
-| **3 Establish** | Lahore Edit; content engine; MTM tier; size chart public | MTM/measure + tracking exist; need on-brand content and `/size-guide` |
-| **4 Expand** | Diaspora/Gulf; RTW capsule of proven SKUs; trunk shows | Locale `en`/`ur` ready; shipping still Pakistan-first by product rules |
+| **1 Prototype & proof** | Physical fit, motion photography, freeze construction standard | Size engine + RTW shop; imagery still thin without studio/R2 assets |
+| **2 Soft launch** | Tight RTW catalogue; IG + shop; White Collection | **Full shop + admin** — RTW XS–XL only ([ADR-0015](./decisions/ADR-0015-rtw-launch.md)) |
+| **3 Establish** | Lahore Edit; content engine; optional MTM tier; size chart public | Size guide live; MTM remains **off** storefront until a new ADR |
+| **4 Expand** | Diaspora/Gulf; proven SKUs; trunk shows | Locale `en`/`ur` ready; shipping still Pakistan-first by product rules |
 
 ### Soft-launch discipline (what “best” means in product)
 
 1. Prefer a **tight White Collection** over a noisy demo catalogue.
 2. Sell **ensembles / looks**, not random SKU sprawl.
-3. Default path: **made to measure**; standard size is the fallback.
+3. Default path: **ready to wear (XS–XL)**; made-to-measure is **not** on the customer path (ADR-0015).
 4. Photography and PDP: **motion and drape first**.
 5. Do not add embellishment options to close a sale.
 6. Occasion vs everyday: decide deliberately — don’t straddle by accident.

@@ -91,7 +91,7 @@ export async function placeOrderCore(
     id: orderId,
     orderNumber,
     userId: input.userId,
-    guestEmail: input.guestEmail ?? null,
+    guestEmail: input.guestEmail?.trim().toLowerCase() || null,
     guestPhone: input.guestPhone ?? null,
     whatsappNumber: input.whatsappNumber,
     status: "DRAFT",
@@ -158,7 +158,7 @@ export async function placeOrderCore(
     entity: "order",
     id: orderId,
     from: "DRAFT",
-    to: "AWAITING_DEPOSIT",
+    to: input.paymentPlan === "FULL_COD" ? "DEPOSIT_PAID" : "AWAITING_DEPOSIT",
     actor: input.actor,
     note: input.transitionNote,
     allowList: ORDER_TRANSITION_ALLOW,
@@ -169,7 +169,7 @@ export async function placeOrderCore(
     await recordDiscountRedemptions(tx, {
       orderId,
       userId: input.userId,
-      guestEmail: input.guestEmail ?? null,
+      guestEmail: input.guestEmail?.trim().toLowerCase() || null,
       breakdown: discountBreakdownSnapshot,
     });
   }
@@ -183,9 +183,7 @@ export async function placeOrderCore(
     await tx.delete(cartLines).where(eq(cartLines.cartId, input.cartId));
   }
 
-  // Note: customer notification is driven by the DRAFT → AWAITING_DEPOSIT
-  // transition above (order.transitioned → order.received email). We do not
-  // emit a separate "order.placed" event — nothing consumes it.
+  // Customer notify is driven by the place transition (order.transitioned).
 
   return { orderId, orderNumber };
 }

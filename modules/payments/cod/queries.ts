@@ -24,7 +24,47 @@ export async function recordCodBalanceOnDelivery(
     .where(eq(orders.id, orderId))
     .limit(1);
 
-  if (!order || order.balanceAmountMinor <= 0) return;
+  if (!order) return;
+
+  // Outstanding balance from ledger — never trust a stale planned column alone.
+  const [manualPaid, providerPaid] = await Promise.all([
+    tx
+      .select({
+        total: sql<number>`coalesce(sum(${orderPayments.amountMinor}), 0)`,
+      })
+      .from(orderPayments)
+      .where(
+        and(
+          eq(orderPayments.orderId, orderId),
+          eq(orderPayments.status, "SUCCEEDED"),
+          notInArray(orderPayments.kind, ["REFUND"]),
+        ),
+      ),
+    tx
+      .select({
+        total: sql<number>`coalesce(sum(${payments.amountMinor}), 0)`,
+      })
+      .from(payments)
+      .where(
+        and(
+          eq(payments.orderId, orderId),
+          inArray(payments.status, ["SUCCEEDED", "AWAITING_VERIFICATION"]),
+          notInArray(payments.kind, ["REFUND"]),
+        ),
+      ),
+  ]);
+
+  const paidMinor =
+    Number(manualPaid[0]?.total ?? 0) + Number(providerPaid[0]?.total ?? 0);
+  const outstandingMinor = Math.max(0, order.totalMinor - paidMinor);
+
+  if (outstandingMinor <= 0) {
+    await tx
+      .update(orders)
+      .set({ balanceAmountMinor: 0, updatedAt: new Date() })
+      .where(eq(orders.id, orderId));
+    return;
+  }
 
   const [existingProvider] = await tx
     .select({ id: payments.id })
@@ -60,12 +100,17 @@ export async function recordCodBalanceOnDelivery(
     orderId,
     provider: "COD",
     kind: "BALANCE",
-    amountMinor: order.balanceAmountMinor,
+    amountMinor: outstandingMinor,
     currency: "PKR",
     status: "SUCCEEDED",
     idempotencyKey: `cod-balance:${orderId}`,
-    rawPayload: { collectedOnDelivery: true },
+    rawPayload: { collectedOnDelivery: true, paidMinor, outstandingMinor },
   });
+
+  await tx
+    .update(orders)
+    .set({ balanceAmountMinor: 0, updatedAt: new Date() })
+    .where(eq(orders.id, orderId));
 
   await enqueue(
     "payment.cod_collected",
@@ -73,7 +118,7 @@ export async function recordCodBalanceOnDelivery(
       paymentId,
       orderId,
       orderNumber: order.orderNumber,
-      amountMinor: order.balanceAmountMinor,
+      amountMinor: outstandingMinor,
       actorId,
     },
     tx,

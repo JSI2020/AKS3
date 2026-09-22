@@ -37,6 +37,7 @@ export const orderStatusEnum = pgEnum("order_status", [
 ]);
 
 export const paymentPlanEnum = pgEnum("payment_plan", [
+  "FULL_COD",
   "FULL_PREPAID",
   "DEPOSIT_50_COD_50",
   "DEPOSIT_70_COD_30",
@@ -114,6 +115,11 @@ export const orders = pgTable("orders", {
   balanceAmountMinor: integer("balance_amount_minor").notNull(),
   paymentPlan: paymentPlanEnum("payment_plan").notNull(),
   promisedShipDate: timestamp("promised_ship_date", { withTimezone: true }),
+  /** Courier used for dispatch (e.g. TCS, Leopards) — set when marking DISPATCHED. */
+  courierName: text("courier_name"),
+  /** Air waybill / tracking number shown on customer track page. */
+  trackingNumber: text("tracking_number"),
+  shippedAt: timestamp("shipped_at", { withTimezone: true }),
   shippingAddressSnapshot: jsonb("shipping_address_snapshot")
     .$type<ShippingAddressSnapshot>()
     .notNull(),

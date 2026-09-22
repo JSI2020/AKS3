@@ -7,8 +7,11 @@ import type { DbTx } from "@/modules/platform/types";
 
 /**
  * Create one board job per order item when measurements are confirmed.
- * Jobs land in CUTTING/PENDING; fabric stays RESERVED until Cutting is entered
- * (order → CUTTING / job advances off the cutting column).
+ *
+ * Jobs start as CUTTING + PENDING — a ready queue, not active cutting.
+ * The board keeps PENDING out of the Cutting column until Start (or first
+ * stage advance). Fabric stays RESERVED until cutting actually begins
+ * (startProductionJobAction / leave-CUTTING transition → enterCuttingStage).
  */
 export async function createProductionJobsForOrder(
   orderId: string,
@@ -40,6 +43,7 @@ export async function createProductionJobsForOrder(
     await tx.insert(productionJobs).values({
       id: uuidv7(),
       orderItemId: item.id,
+      // Next stage when work begins — status PENDING keeps the board quiet.
       stage: "CUTTING",
       status: "PENDING",
       dueAt: order.promisedShipDate,

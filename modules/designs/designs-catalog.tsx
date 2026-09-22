@@ -8,7 +8,17 @@ import { EmptyState, Money } from "@/modules/ui";
 
 import type { StudioCatalogCard, StudioCatalogGroup } from "./studio-catalog";
 
-type Filter = "all" | "draft" | "published";
+type Filter = "all" | "draft" | "published" | "review";
+
+/** Matches Today card / DESIGN_AWAITING_REVIEW_STATUSES. */
+function needsReview(status: string) {
+  return (
+    status === "HERO_REVIEW" ||
+    status === "ANGLES_REVIEW" ||
+    status === "COLOURWAYS_REVIEW" ||
+    status === "READY_TO_PUBLISH"
+  );
+}
 
 function isPublished(status: string) {
   return status === "PUBLISHED";
@@ -18,9 +28,15 @@ function piecesLabel(design: StudioCatalogCard) {
   return design.components.map((c) => c.toUpperCase()).join(" + ");
 }
 
-export function DesignsCatalog({ groups }: { groups: StudioCatalogGroup[] }) {
+export function DesignsCatalog({
+  groups,
+  initialFilter = "all",
+}: {
+  groups: StudioCatalogGroup[];
+  initialFilter?: Filter;
+}) {
   const [q, setQ] = useState("");
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<Filter>(initialFilter);
 
   const designs = useMemo(() => {
     const flat = groups.flatMap((g) => g.designs);
@@ -28,6 +44,7 @@ export function DesignsCatalog({ groups }: { groups: StudioCatalogGroup[] }) {
     return flat.filter((d) => {
       if (filter === "published" && !isPublished(d.status)) return false;
       if (filter === "draft" && isPublished(d.status)) return false;
+      if (filter === "review" && !needsReview(d.status)) return false;
       if (!term) return true;
       return (
         d.name.toLowerCase().includes(term) ||
@@ -50,6 +67,7 @@ export function DesignsCatalog({ groups }: { groups: StudioCatalogGroup[] }) {
         {(
           [
             ["all", "All"],
+            ["review", "Awaiting review"],
             ["draft", "Draft"],
             ["published", "Published"],
           ] as const

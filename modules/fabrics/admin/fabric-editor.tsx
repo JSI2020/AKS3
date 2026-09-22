@@ -799,6 +799,12 @@ export function FabricEditor(props: Props) {
                   <input name="colourNotes" className={fieldClass} />
                 </label>
                 <UnitInput label="Metres" name="metres" unit="m" />
+                <UnitInput
+                  label="Cost / metre (optional)"
+                  name="costRupees"
+                  unit="PKR"
+                  required={false}
+                />
                 <button
                   disabled={pending}
                   className="border border-ink px-4 py-2 text-[13px] text-ink disabled:opacity-50 sm:col-start-3"

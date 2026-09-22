@@ -1,0 +1,90 @@
+{
+  "generatedAt": "2026-09-16T00:12:18.424Z",
+  "summary": {
+    "total": 16,
+    "passed": 15,
+    "failed": 1
+  },
+  "rows": [
+    {
+      "id": "UI-home",
+      "ok": true,
+      "detail": "http://127.0.0.1:3000/"
+    },
+    {
+      "id": "UI-collections",
+      "ok": true,
+      "detail": "http://127.0.0.1:3000/collections/all"
+    },
+    {
+      "id": "UI-pdp",
+      "ok": true,
+      "detail": "/designs/production-design-01a0a758-8289-75b5-a18e-10ecdc62c27f"
+    },
+    {
+      "id": "UI-size",
+      "ok": true,
+      "detail": "in-stock size selected"
+    },
+    {
+      "id": "UI-add",
+      "ok": true,
+      "detail": "added to bag"
+    },
+    {
+      "id": "UI-checkout",
+      "ok": true,
+      "detail": "http://127.0.0.1:3000/checkout"
+    },
+    {
+      "id": "UI-addr-next",
+      "ok": false,
+      "detail": ""
+    },
+    {
+      "id": "UI-cod",
+      "ok": true,
+      "detail": "http://127.0.0.1:3000/checkout"
+    },
+    {
+      "id": "UI-place",
+      "ok": true,
+      "detail": "http://127.0.0.1:3000/checkout/confirmation?order=AKS-2026-00006"
+    },
+    {
+      "id": "UI-track",
+      "ok": true,
+      "detail": "http://127.0.0.1:3000/track/AKS-2026-00006"
+    },
+    {
+      "id": "UI-admin-login",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "id": "UI-admin-orders-gate",
+      "ok": true,
+      "detail": "http://127.0.0.1:3000/admin/login"
+    },
+    {
+      "id": "API-health",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "id": "API-search",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "id": "API-safepay",
+      "ok": true,
+      "detail": "400"
+    },
+    {
+      "id": "API-trav",
+      "ok": true,
+      "detail": "404"
+    }
+  ]
+}

@@ -188,13 +188,16 @@ export async function verifyTrackOtp(input: {
 
   const hdrs = await headers();
   const ip = clientIpFromHeaders(hdrs);
+  // Same composite key for check + failure logs so lockout increments.
+  const rateLimitKey = `${input.orderNumber}:${email}`;
   const verifyLimit = await checkOtpVerifyRateLimit({
-    email: `${input.orderNumber}:${email}`,
+    email: rateLimitKey,
     reasons: ["track_otp_invalid"],
   });
+
   if (!verifyLimit.ok) {
     await logSignInAttempt({
-      email,
+      email: rateLimitKey,
       ip,
       success: false,
       reason: "track_otp_locked",
@@ -220,7 +223,7 @@ export async function verifyTrackOtp(input: {
   const ok = rows.length > 0 && codesEqual(rows[0]!.token, tokenHash);
   if (!ok) {
     await logSignInAttempt({
-      email,
+      email: rateLimitKey,
       ip,
       success: false,
       reason: "track_otp_invalid",

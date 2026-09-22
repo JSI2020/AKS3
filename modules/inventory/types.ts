@@ -46,8 +46,8 @@ export class RtwStockError extends Error {
 }
 
 /**
- * Fabric is reserved when an order reaches MEASUREMENTS_CONFIRMED — the earliest
- * production-lock point before cutting. DEPOSIT_PAID only confirms payment; measurements
- * and consumption estimates may still change. This aligns with the fabric lock gate on CUTTING.
+ * Fabric is reserved at MEASUREMENTS_CONFIRMED for MADE_TO_MEASURE lines only.
+ * STANDARD (RTW) skips this — cloth was consumed when finished stock was received.
+ * DEPOSIT_PAID only confirms payment; this gate aligns with the fabric lock on CUTTING.
  */
 export const FABRIC_RESERVATION_ORDER_STATUS = "MEASUREMENTS_CONFIRMED" as const;

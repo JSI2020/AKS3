@@ -18,6 +18,7 @@ import {
 } from "@aks/db";
 import { uuidv7 } from "@aks/shared";
 import { requirePermission } from "@/modules/auth";
+import { consumeFabricForRtwReceiveTx } from "@/modules/inventory/consume-fabric-for-rtw";
 import { refreshFabricLotStatus } from "@/modules/inventory/lot-status";
 import { revalidateFabricStockPaths } from "@/modules/inventory/revalidate-fabric-paths";
 import { ensureRtwStockRowTx } from "@/modules/inventory/rtw-stock";
@@ -140,6 +141,15 @@ async function applyUnitMovement(args: {
         .update(rtwStock)
         .set({ quantityOnHand: next, updatedAt: new Date() })
         .where(eq(rtwStock.id, args.stockId));
+
+      // Receiving finished pieces consumes cloth; other deltas do not restore fabric.
+      if (args.reason === "RECEIVED" && args.delta > 0) {
+        await consumeFabricForRtwReceiveTx(tx, {
+          rtwStockId: args.stockId,
+          quantity: args.delta,
+          actorId: args.actorId,
+        });
+      }
     } else if (args.kind === "packing") {
       const [row] = await tx
         .select()

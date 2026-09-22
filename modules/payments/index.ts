@@ -16,6 +16,16 @@ export {
 } from "./types";
 
 export { createSafepayCheckout } from "./create-checkout";
+export { startSafepayDepositAction } from "./safepay/start-deposit";
+export type { StartSafepayDepositResult } from "./safepay/start-deposit";
+export {
+  isOnlinePrepaidEnabled,
+  isPaymentMethodEnabled,
+  listEnabledOnlineMethods,
+} from "./methods-config";
+export type { OnlinePaymentMethod } from "./methods-config";
+export { createJazzCashProvider } from "./providers/jazzcash";
+export { createEasyPaisaProvider } from "./providers/easypaisa";
 export {
   processSafepayWebhook,
   readSafepayConfig,

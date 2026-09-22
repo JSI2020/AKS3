@@ -19,6 +19,8 @@ type Props = {
   cart: CartPublic;
   isSignedIn: boolean;
   codDisabled?: boolean;
+  shippingMinor?: number;
+  shippingLabel?: string;
 };
 
 const STEPS: { key: CheckoutStep; label: string }[] = [
@@ -27,7 +29,13 @@ const STEPS: { key: CheckoutStep; label: string }[] = [
   { key: "review", label: "Review" },
 ];
 
-export function CheckoutFlow({ cart, isSignedIn, codDisabled = false }: Props) {
+export function CheckoutFlow({
+  cart,
+  isSignedIn,
+  codDisabled = false,
+  shippingMinor = 0,
+  shippingLabel = "Free shipping within Pakistan",
+}: Props) {
   const router = useRouter();
   const [step, setStep] = useState<CheckoutStep>("address");
   const [pending, startTransition] = useTransition();
@@ -55,6 +63,10 @@ export function CheckoutFlow({ cart, isSignedIn, codDisabled = false }: Props) {
     useState<CheckoutDiscountPreview | null>(null);
   const [customerNotes, setCustomerNotes] = useState("");
 
+  const merchandiseMinor = cart.subtotalMinor;
+  const cartTotalMinor =
+    discountPreview?.totalMinor ?? merchandiseMinor + shippingMinor;
+
   function goToPayment(nextAddress: CheckoutAddressInput) {
     setAddress(nextAddress);
     setError(null);
@@ -67,7 +79,7 @@ export function CheckoutFlow({ cart, isSignedIn, codDisabled = false }: Props) {
     setStep("review");
     trackCheckoutStarted({
       itemCount: cart.lines.length,
-      totalMinor: cart.subtotalMinor,
+      totalMinor: cartTotalMinor,
     });
   }
 
@@ -93,7 +105,7 @@ export function CheckoutFlow({ cart, isSignedIn, codDisabled = false }: Props) {
       trackOrderPlaced({
         orderNumber: result.orderNumber,
         designIds: cart.lines.map((item) => item.designId),
-        totalMinor: discountPreview?.totalMinor ?? cart.subtotalMinor,
+        totalMinor: cartTotalMinor,
       });
 
       router.push(`/checkout/confirmation?order=${encodeURIComponent(result.orderNumber)}`);
@@ -146,9 +158,18 @@ export function CheckoutFlow({ cart, isSignedIn, codDisabled = false }: Props) {
           <span className="text-[13px] uppercase tracking-[0.08em] text-ink/55">
             Cart total
           </span>
-          <Money value={cart.subtotalMinor} className="text-[18px] text-ink" />
+          <Money value={cartTotalMinor} className="text-[18px] text-ink" />
         </div>
         <p className="mt-2 text-[13px] leading-relaxed text-ink/65">
+          {shippingLabel}
+          {shippingMinor > 0 ? (
+            <>
+              {" · "}
+              <Money value={shippingMinor} className="inline" />
+            </>
+          ) : null}
+        </p>
+        <p className="mt-1 text-[13px] leading-relaxed text-ink/65">
           {cart.leadTimeLabel}
         </p>
       </aside>
@@ -180,7 +201,8 @@ export function CheckoutFlow({ cart, isSignedIn, codDisabled = false }: Props) {
       {step === "payment" ? (
         <PaymentStep
           lines={cart.lines.map((line) => ({ sizeMode: line.sizeMode }))}
-          subtotalMinor={cart.subtotalMinor}
+          subtotalMinor={merchandiseMinor}
+          shippingMinor={shippingMinor}
           selected={paymentPlan}
           codDisabled={codDisabled}
           discountCode={discountCode}

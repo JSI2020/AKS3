@@ -28,8 +28,11 @@ import {
   REWORK_RETURN_STAGE,
   reworkChargeCustomer,
   type ProductionJobStage,
+  type ProductionJobStatus,
   type ReworkFaultAttribution,
 } from "./constants";
+import { enterCuttingStage } from "./cutting";
+import { syncOrderStatusForJobStage } from "./sync-order";
 import {
   resolveNextJobStage,
   transitionProductionJob,
@@ -56,6 +59,11 @@ function actionError(error: unknown): { ok: false; error: string } {
   return { ok: false, error: "Something went wrong." };
 }
 
+/**
+ * Board / kanban stage advance.
+ * Order status stays in sync via transitionProductionJob → syncOrderStatusForJobStage
+ * (see modules/production/transitions.ts + sync-order.ts). No separate order write needed.
+ */
 export async function advanceProductionJobAction(input: {
   jobId: string;
   toStage?: ProductionJobStage;
@@ -122,6 +130,84 @@ export async function advanceProductionJobAction(input: {
     });
 
     revalidatePath("/admin/production");
+    revalidatePath("/admin/orders");
+    return { ok: true };
+  } catch (error) {
+    return actionError(error);
+  }
+}
+
+/** Move a queued (PENDING) job into active work — cutting begins here for CUTTING jobs. */
+export async function startProductionJobAction(input: {
+  jobId: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const session = await requirePermission("production.advance_stage");
+
+    await db.transaction(async (tx) => {
+      const [job] = await tx
+        .select({
+          id: productionJobs.id,
+          stage: productionJobs.stage,
+          status: productionJobs.status,
+          orderItemId: productionJobs.orderItemId,
+        })
+        .from(productionJobs)
+        .where(eq(productionJobs.id, input.jobId))
+        .limit(1);
+
+      if (!job) throw new Error("Job not found.");
+      if (job.status !== "PENDING") {
+        throw new Error("Only PENDING jobs can be started.");
+      }
+
+      const [item] = await tx
+        .select({ orderId: orderItems.orderId })
+        .from(orderItems)
+        .where(eq(orderItems.id, job.orderItemId))
+        .limit(1);
+      if (!item) throw new Error("Order item not found.");
+
+      await transitionProductionJobStatus({
+        jobId: job.id,
+        from: job.status as ProductionJobStatus,
+        to: "IN_PROGRESS",
+        actor: { id: session.user.id, role: session.user.role },
+        note: "Started",
+        tx,
+      });
+
+      await tx
+        .update(productionJobs)
+        .set({ startedAt: new Date(), updatedAt: new Date() })
+        .where(eq(productionJobs.id, job.id));
+
+      if (job.stage === "CUTTING") {
+        await enterCuttingStage(
+          item.orderId,
+          { id: session.user.id, role: session.user.role },
+          tx,
+        );
+        await syncOrderStatusForJobStage(item.orderId, "CUTTING", tx);
+      }
+
+      const ctx = await auditContext();
+      await insertAuditLog(tx as unknown as Database, {
+        id: uuidv7(),
+        actorId: session.user.id,
+        actorRole: session.user.role,
+        action: "production.start_job",
+        entityType: "production_job",
+        entityId: job.id,
+        before: { status: "PENDING" },
+        after: { status: "IN_PROGRESS", stage: job.stage },
+        ip: ctx.ip,
+        userAgent: ctx.userAgent,
+      });
+    });
+
+    revalidatePath("/admin/production");
+    revalidatePath("/admin/orders");
     return { ok: true };
   } catch (error) {
     return actionError(error);
@@ -220,6 +306,7 @@ export async function blockProductionJobAction(input: {
     });
 
     revalidatePath("/admin/production");
+    revalidatePath("/admin/orders");
     return { ok: true };
   } catch (error) {
     return actionError(error);
@@ -302,6 +389,7 @@ export async function recordQcCheckAction(input: {
     });
 
     revalidatePath("/admin/production");
+    revalidatePath("/admin/orders");
     return { ok: true };
   } catch (error) {
     return actionError(error);

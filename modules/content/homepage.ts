@@ -239,10 +239,122 @@ export async function loadHomepageBundle(
   };
 }
 
+async function countHomepageChildren(homepageId: string): Promise<number> {
+  const [slides, tiles, blocks] = await Promise.all([
+    db
+      .select({ id: heroSlides.id })
+      .from(heroSlides)
+      .where(eq(heroSlides.homepageId, homepageId))
+      .limit(1),
+    db
+      .select({ id: categoryTiles.id })
+      .from(categoryTiles)
+      .where(eq(categoryTiles.homepageId, homepageId))
+      .limit(1),
+    db
+      .select({ id: featuredBlocks.id })
+      .from(featuredBlocks)
+      .where(eq(featuredBlocks.homepageId, homepageId))
+      .limit(1),
+  ]);
+  return (slides[0] ? 1 : 0) + (tiles[0] ? 1 : 0) + (blocks[0] ? 1 : 0);
+}
+
+/**
+ * Mirror draft CMS children onto the published homepage when the shop would
+ * otherwise load null / empty (editor configured, publish row missing or bare).
+ */
+async function ensurePublishedHomepageHasContent(): Promise<string | null> {
+  const draftRows = await db
+    .select()
+    .from(homepages)
+    .where(eq(homepages.status, "DRAFT"))
+    .limit(1);
+  const draft = draftRows[0] ?? null;
+
+  let published = await getPublishedHomepageRow();
+
+  if (!published) {
+    if (!draft) return null;
+    const draftChildCount = await countHomepageChildren(draft.id);
+    if (draftChildCount === 0) return null;
+
+    const id = uuidv7();
+    await db.insert(homepages).values({
+      id,
+      status: "PUBLISHED",
+      sectionsOrder: draft.sectionsOrder,
+      sectionsEnabled: draft.sectionsEnabled,
+      publishedAt: new Date(),
+    });
+    published = (await getPublishedHomepageRow())!;
+  } else {
+    const publishedChildCount = await countHomepageChildren(published.id);
+    if (publishedChildCount > 0) return published.id;
+    if (!draft) return published.id;
+    const draftChildCount = await countHomepageChildren(draft.id);
+    if (draftChildCount === 0) return published.id;
+
+    await db
+      .update(homepages)
+      .set({
+        sectionsOrder: draft.sectionsOrder,
+        sectionsEnabled: draft.sectionsEnabled,
+        publishedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(homepages.id, published.id));
+  }
+
+  if (!draft) return published.id;
+
+  await db.delete(heroSlides).where(eq(heroSlides.homepageId, published.id));
+  await db
+    .delete(categoryTiles)
+    .where(eq(categoryTiles.homepageId, published.id));
+  await db
+    .delete(featuredBlocks)
+    .where(eq(featuredBlocks.homepageId, published.id));
+
+  const [slides, tiles, blocks] = await Promise.all([
+    listHeroSlidesAdmin(draft.id),
+    listCategoryTilesAdmin(draft.id),
+    listFeaturedBlocksAdmin(draft.id),
+  ]);
+
+  for (const s of slides) {
+    await db.insert(heroSlides).values({
+      ...s,
+      id: uuidv7(),
+      homepageId: published.id,
+    });
+  }
+  for (const t of tiles) {
+    await db.insert(categoryTiles).values({
+      ...t,
+      id: uuidv7(),
+      homepageId: published.id,
+    });
+  }
+  for (const b of blocks) {
+    await db.insert(featuredBlocks).values({
+      ...b,
+      id: uuidv7(),
+      homepageId: published.id,
+    });
+  }
+
+  return published.id;
+}
+
 export async function loadStorefrontHomepage(): Promise<HomepagePublic | null> {
-  const published = await getPublishedHomepageRow();
-  if (!published) return null;
-  return loadHomepageBundle(published.id);
+  const homepageId = await ensurePublishedHomepageHasContent();
+  if (!homepageId) {
+    const published = await getPublishedHomepageRow();
+    if (!published) return null;
+    return loadHomepageBundle(published.id);
+  }
+  return loadHomepageBundle(homepageId);
 }
 
 export async function updateHomepageSections(input: {

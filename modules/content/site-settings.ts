@@ -11,6 +11,47 @@ import {
 
 const KEY = "storefront";
 
+/** Old seed / admin values that mis-state RTW lead time. */
+const STALE_LEAD_TIME_PROMISES = [
+  "made when you order",
+  "3–5 day",
+  "3-5 day",
+  "ships in 3–5",
+  "ships in 3-5",
+  "dispatched in 3–5",
+  "dispatched in 3-5",
+  "typically 14–21",
+  "typically 14-21",
+];
+
+function scrubSiteSettings(raw: Partial<SiteSettingsPublic>): SiteSettingsPublic {
+  const merged: SiteSettingsPublic = {
+    ...DEFAULT_SITE_SETTINGS,
+    ...raw,
+  };
+  const promise = merged.leadTimePromise?.trim() ?? "";
+  const stale = STALE_LEAD_TIME_PROMISES.some((needle) =>
+    promise.toLowerCase().includes(needle.toLowerCase()),
+  );
+  if (!promise || stale) {
+    merged.leadTimePromise = DEFAULT_SITE_SETTINGS.leadTimePromise;
+  }
+  if (
+    merged.shippingMode !== "FREE_PAKISTAN" &&
+    merged.shippingMode !== "FLAT_PAKISTAN"
+  ) {
+    merged.shippingMode = DEFAULT_SITE_SETTINGS.shippingMode;
+  }
+  merged.shippingFlatMinor = Math.max(
+    0,
+    Math.trunc(Number(merged.shippingFlatMinor) || 0),
+  );
+  if (!merged.shippingPromise?.trim()) {
+    merged.shippingPromise = DEFAULT_SITE_SETTINGS.shippingPromise;
+  }
+  return merged;
+}
+
 export async function getSiteSettings(): Promise<SiteSettingsPublic> {
   const rows = await db
     .select()
@@ -23,10 +64,7 @@ export async function getSiteSettings(): Promise<SiteSettingsPublic> {
     return { ...DEFAULT_SITE_SETTINGS };
   }
 
-  return {
-    ...DEFAULT_SITE_SETTINGS,
-    ...(raw as Partial<SiteSettingsPublic>),
-  };
+  return scrubSiteSettings(raw as Partial<SiteSettingsPublic>);
 }
 
 export async function upsertSiteSettings(
@@ -53,8 +91,15 @@ export function formatLeadTimeLine(
   settings: SiteSettingsPublic,
   daysOverride: number | null,
 ): string {
-  if (daysOverride != null) {
-    return `Made when you order · ${daysOverride} days`;
+  if (daysOverride != null && daysOverride > 0) {
+    return `Ready to wear · ships in about ${daysOverride} days`;
   }
-  return settings.leadTimePromise;
+  const promise = settings.leadTimePromise?.trim();
+  if (promise) return promise;
+  const min = settings.leadTimeDaysMin;
+  const max = settings.leadTimeDaysMax;
+  if (min > 0 && max > 0 && max >= min) {
+    return `Ready to wear · typically ${min}–${max} days`;
+  }
+  return "Ready to wear · timing depends on the piece";
 }

@@ -1,0 +1,1 @@
+export { createJazzCashProvider } from "./adapter";

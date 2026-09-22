@@ -10,7 +10,10 @@ import {
 } from "@/modules/catalog";
 import type { GalleryAngle, SizeMode } from "@/modules/catalog";
 import { DesignViewTracker } from "@/modules/analytics";
-import { getSiteSettings } from "@/modules/content/site-settings";
+import {
+  formatLeadTimeLine,
+  getSiteSettings,
+} from "@/modules/content/site-settings";
 
 type Props = {
   params: Promise<{ locale: string; slug: string }>;
@@ -58,6 +61,10 @@ export default async function DesignDetailPage({ params, searchParams }: Props) 
   });
 
   const settings = await getSiteSettings();
+  const leadTimePromise = formatLeadTimeLine(
+    settings,
+    design.leadTimeDaysOverride,
+  );
 
   return (
     <main className="pdp-page">
@@ -76,7 +83,7 @@ export default async function DesignDetailPage({ params, searchParams }: Props) 
         initialSizeMode={sizeMode}
         initialSizeLabel={sizeLabel}
         initialQuantity={quantity}
-        leadTimePromise={settings.leadTimePromise}
+        leadTimePromise={leadTimePromise}
       />
     </main>
   );

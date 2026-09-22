@@ -35,6 +35,13 @@ export type ReworkFaultAttribution =
   | "FABRIC_DEFECT"
   | "UNDETERMINED";
 
+export const REWORK_FAULT_ATTRIBUTIONS = [
+  "OUR_ERROR",
+  "CUSTOMER_MEASUREMENT",
+  "FABRIC_DEFECT",
+  "UNDETERMINED",
+] as const satisfies readonly ReworkFaultAttribution[];
+
 /** Linear stage machine — embroidery skip resolved at transition time. */
 export const PRODUCTION_STAGE_ALLOW: Record<
   ProductionJobStage,

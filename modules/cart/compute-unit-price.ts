@@ -41,6 +41,7 @@ export async function computeCartLineUnitPrice(input: {
   const [colourwayRow] = await db
     .select({
       priceDeltaMinor: colourways.priceDeltaMinor,
+      basePriceMinor: colourways.basePriceMinor,
       active: colourways.active,
       designId: colourways.designId,
     })
@@ -113,15 +114,23 @@ export async function computeCartLineUnitPrice(input: {
       ? designRow.madeToMeasureSurchargeMinor
       : 0;
 
+  // Match resolveShadePriceMinor: shade-owned base wins; else design + delta.
+  const shadeOwnsBase =
+    colourwayRow.basePriceMinor != null && colourwayRow.basePriceMinor > 0;
+  const basePriceMinor = shadeOwnsBase
+    ? colourwayRow.basePriceMinor!
+    : designRow.basePriceMinor;
+  const colourwayDeltaMinor = shadeOwnsBase ? 0 : colourwayRow.priceDeltaMinor;
+
   const unitPriceMinor =
-    designRow.basePriceMinor +
-    colourwayRow.priceDeltaMinor +
+    basePriceMinor +
+    colourwayDeltaMinor +
     customizationDeltaMinor +
     madeToMeasureSurchargeMinor;
 
   return {
-    basePriceMinor: designRow.basePriceMinor,
-    colourwayDeltaMinor: colourwayRow.priceDeltaMinor,
+    basePriceMinor,
+    colourwayDeltaMinor,
     customizationDeltaMinor,
     madeToMeasureSurchargeMinor,
     unitPriceMinor,

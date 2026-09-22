@@ -48,6 +48,12 @@ export function ReviewStep({
   const [validationError, setValidationError] = useState<string | null>(null);
   const [validationIssues, setValidationIssues] = useState<string[]>([]);
   const [subtotalMinor, setSubtotalMinor] = useState(cart.subtotalMinor);
+  const [shippingMinor, setShippingMinor] = useState(
+    discountPreview?.shippingMinor ?? 0,
+  );
+  const [shippingLabel, setShippingLabel] = useState(
+    "Free shipping within Pakistan",
+  );
 
   useEffect(() => {
     startCheck(async () => {
@@ -62,11 +68,16 @@ export function ReviewStep({
       setValidationError(null);
       setValidationIssues([]);
       setSubtotalMinor(result.subtotalMinor);
+      setShippingMinor(result.shippingMinor);
+      setShippingLabel(result.shippingLabel);
     });
   }, []);
 
-  const totalMinor = discountPreview?.totalMinor ?? subtotalMinor;
   const discountMinor = discountPreview?.discountMinor ?? 0;
+  const resolvedShippingMinor = discountPreview?.shippingMinor ?? shippingMinor;
+  const totalMinor =
+    discountPreview?.totalMinor ??
+    subtotalMinor + resolvedShippingMinor - discountMinor;
   const amounts = computeDepositAmounts({ totalMinor, plan: paymentPlan });
 
   return (
@@ -119,6 +130,7 @@ export function ReviewStep({
             </>
           ) : null}
         </p>
+        <p className="mt-3 text-[13px] text-ink/65">{shippingLabel}</p>
       </section>
 
       <section className="border border-greige-deep p-4">
@@ -145,6 +157,14 @@ export function ReviewStep({
           <span>Subtotal</span>
           <Money value={subtotalMinor} />
         </div>
+        <div className="mt-2 flex justify-between text-[14px] text-ink/70">
+          <span>{shippingLabel}</span>
+          {resolvedShippingMinor === 0 ? (
+            <span>Free</span>
+          ) : (
+            <Money value={resolvedShippingMinor} />
+          )}
+        </div>
         {discountMinor > 0 ? (
           <div className="mt-2 flex justify-between text-[14px] text-ink/70">
             <span>
@@ -159,13 +179,19 @@ export function ReviewStep({
           <span>Order total</span>
           <Money value={totalMinor} />
         </div>
-        <div className="mt-2 flex justify-between text-[14px] text-ink/70">
-          <span>Deposit due now</span>
-          <Money value={amounts.depositAmountMinor} />
-        </div>
+        {amounts.depositAmountMinor > 0 ? (
+          <div className="mt-2 flex justify-between text-[14px] text-ink/70">
+            <span>Pay now</span>
+            <Money value={amounts.depositAmountMinor} />
+          </div>
+        ) : null}
         {amounts.balanceAmountMinor > 0 ? (
           <div className="mt-1 flex justify-between text-[14px] text-ink/70">
-            <span>Balance on delivery</span>
+            <span>
+              {amounts.depositAmountMinor > 0
+                ? "Balance on delivery"
+                : "Pay on delivery"}
+            </span>
             <Money value={amounts.balanceAmountMinor} />
           </div>
         ) : null}

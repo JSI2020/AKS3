@@ -1,9 +1,17 @@
 import type { ContentLink } from "@aks/db";
 
+export type ShippingMode = "FREE_PAKISTAN" | "FLAT_PAKISTAN";
+
 export type SiteSettingsPublic = {
   leadTimePromise: string;
   leadTimeDaysMin: number;
   leadTimeDaysMax: number;
+  /** Soft-launch: Pakistan only. Free by default, or flat fee in paisa. */
+  shippingMode: ShippingMode;
+  /** Paisa — used when shippingMode is FLAT_PAKISTAN. */
+  shippingFlatMinor: number;
+  /** Shown on checkout totals (e.g. free-ship promise). */
+  shippingPromise: string;
   whatsappUrl: string;
   instagramUrl: string;
   newsletterEnabled: boolean;
@@ -15,9 +23,12 @@ export type SiteSettingsPublic = {
 };
 
 export const DEFAULT_SITE_SETTINGS: SiteSettingsPublic = {
-  leadTimePromise: "Ready to wear · ships in 3–5 days",
-  leadTimeDaysMin: 3,
-  leadTimeDaysMax: 5,
+  leadTimePromise: "Ready to wear · timing depends on the piece",
+  leadTimeDaysMin: 0,
+  leadTimeDaysMax: 0,
+  shippingMode: "FREE_PAKISTAN",
+  shippingFlatMinor: 0,
+  shippingPromise: "Free shipping within Pakistan",
   whatsappUrl: "https://wa.me/923001234567",
   instagramUrl: "https://instagram.com/aks.atelier",
   newsletterEnabled: true,

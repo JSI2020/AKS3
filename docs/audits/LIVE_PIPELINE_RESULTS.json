@@ -1,0 +1,31 @@
+{
+  "generatedAt": "2026-09-16T00:08:37.795Z",
+  "orderId": "01a0a78b-3131-7321-81fb-21cc6d5a2508",
+  "orderNumber": "AKS-2026-00004",
+  "guestEmail": "live-pipeline-1789517312284@mailinator.com",
+  "summary": {
+    "total": 3,
+    "passed": 2,
+    "failed": 1
+  },
+  "steps": [
+    {
+      "id": "P-stock",
+      "name": "RTW stock",
+      "ok": true,
+      "detail": "slug=demo-occasion-court-farshi-pair size=XXL avail=5"
+    },
+    {
+      "id": "S-PDP",
+      "name": "PDP live",
+      "ok": true,
+      "detail": "200"
+    },
+    {
+      "id": "P-01",
+      "name": "FULL_COD place",
+      "ok": false,
+      "detail": "This module cannot be imported from a Client Component module. It should only be used from a Server Component."
+    }
+  ]
+}

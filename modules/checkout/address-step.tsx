@@ -121,7 +121,7 @@ export function AddressStep({ initial, isSignedIn, onContinue }: Props) {
       {!isSignedIn ? (
         <div>
           <label htmlFor="guestEmail" className={labelClass}>
-            Email (optional)
+            Email — for tracking
           </label>
           <input
             id="guestEmail"
@@ -131,7 +131,12 @@ export function AddressStep({ initial, isSignedIn, onContinue }: Props) {
             className={inputClass}
             value={form.guestEmail ?? ""}
             onChange={(e) => update("guestEmail", e.target.value)}
+            required
           />
+          <p className="mt-1 text-[12px] text-ink/55">
+            We use this to send order updates and the track link. No account
+            needed.
+          </p>
         </div>
       ) : null}
 

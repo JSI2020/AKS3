@@ -10,4 +10,16 @@ describe("message templates", () => {
     });
     expect(out).toBe("Hello Sara, order AKS-2026-00001");
   });
+
+  it("renders courier AWB vars for dispatch copy", () => {
+    const out = renderTemplate(
+      "Courier: {{courierName}}\nTracking / AWB: {{trackingNumber}}",
+      {
+        courierName: "TCS",
+        trackingNumber: "123456789012",
+      },
+    );
+    expect(out).toContain("TCS");
+    expect(out).toContain("123456789012");
+  });
 });

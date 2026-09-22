@@ -35,6 +35,25 @@ async function main() {
   registerHandler("message.send", handleMessageSend);
   registerHandler("whatsapp.notify", handleWhatsappNotify);
   registerHandler("order.transitioned", handleOrderTransitioned);
+  // Fire-and-forget topics: ack so the poller does not RETRY/MISSING forever.
+  // Side effects for these (if any) already run inline in the transition/payment paths.
+  const noopTopics = [
+    "production_job.transitioned",
+    "production_job_status.transitioned",
+    "payment.awaiting_verification",
+    "payment.verified",
+    "payment.rejected",
+    "payment.succeeded",
+    "payment.cod_collected",
+    "cod.remittance_recorded",
+    "customer.cod_disabled",
+    "inventory.low_stock",
+  ] as const;
+  for (const topic of noopTopics) {
+    registerHandler(topic, async () => {
+      /* intentional no-op */
+    });
+  }
   registerHandler("assets.purgeExpired", async () => {
     const n = await purgeExpiredAssets();
     console.log(`[worker] purged ${n} assets`);
@@ -44,6 +63,14 @@ async function main() {
   });
   registerDesignGenerateHandler();
   registerTryOnHandlers();
+
+  // Ensure order-email templates exist before draining (avoids DEAD "No template found").
+  const { seedMessageTemplatesIntoDb } = await import(
+    "../modules/messaging/seed-templates"
+  );
+  await seedMessageTemplatesIntoDb();
+  console.log("[worker] message templates seeded");
+
   console.log(`[worker] outbox polling every ${POLL_MS}ms`);
 
   // Long-lived process — not serverless.

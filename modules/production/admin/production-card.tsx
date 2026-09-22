@@ -5,19 +5,37 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 import type { ProductionBoardCard, StaffOption } from "../queries";
+import {
+  REWORK_FAULT_ATTRIBUTIONS,
+  type ReworkFaultAttribution,
+} from "../constants";
 
 type ProductionCardProps = {
   card: ProductionBoardCard;
   staff: StaffOption[];
   onAssign: (jobId: string, staffId: string | null) => Promise<void>;
+  onStart?: (jobId: string) => Promise<void>;
+  onBlock?: (jobId: string, reason: string) => Promise<void>;
+  onQcPass?: (jobId: string) => Promise<void>;
+  onQcFail?: (
+    jobId: string,
+    fault: ReworkFaultAttribution,
+    reason: string,
+  ) => Promise<void>;
   dragging?: boolean;
+  showStart?: boolean;
 };
 
 export function ProductionCard({
   card,
   staff,
   onAssign,
+  onStart,
+  onBlock,
+  onQcPass,
+  onQcFail,
   dragging = false,
+  showStart = false,
 }: ProductionCardProps) {
   const daysLabel =
     card.daysToShip === null
@@ -25,6 +43,17 @@ export function ProductionCard({
       : card.daysToShip < 0
         ? `${Math.abs(card.daysToShip)}d late`
         : `${card.daysToShip}d`;
+
+  const canBlock =
+    Boolean(onBlock) &&
+    card.status !== "BLOCKED" &&
+    card.status !== "DONE";
+
+  const canQc =
+    card.stage === "QC" &&
+    card.status !== "BLOCKED" &&
+    Boolean(onQcPass) &&
+    Boolean(onQcFail);
 
   return (
     <article
@@ -98,6 +127,8 @@ export function ProductionCard({
         </span>
         {card.status === "BLOCKED" ? (
           <span className="text-madder">Blocked</span>
+        ) : card.status === "PENDING" ? (
+          <span className="text-chalk">Queued</span>
         ) : null}
       </div>
 
@@ -119,6 +150,77 @@ export function ProductionCard({
           ))}
         </select>
       </label>
+
+      {(showStart || canBlock || canQc) && (
+        <div
+          className="mt-2 flex flex-wrap gap-1.5"
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          {showStart && onStart ? (
+            <button
+              type="button"
+              className="border border-zari/60 px-1.5 py-0.5 font-mono text-[11px] uppercase tracking-wide text-zari hover:border-zari hover:text-greige"
+              onClick={() => {
+                void onStart(card.id);
+              }}
+            >
+              Start
+            </button>
+          ) : null}
+          {canBlock ? (
+            <button
+              type="button"
+              className="border border-madder/60 px-1.5 py-0.5 font-mono text-[11px] uppercase tracking-wide text-madder hover:border-madder"
+              onClick={() => {
+                const reason = window.prompt("Blocked reason?");
+                if (!reason?.trim() || !onBlock) return;
+                void onBlock(card.id, reason.trim());
+              }}
+            >
+              Block
+            </button>
+          ) : null}
+          {canQc ? (
+            <>
+              <button
+                type="button"
+                className="border border-zari/60 px-1.5 py-0.5 font-mono text-[11px] uppercase tracking-wide text-zari hover:border-zari hover:text-greige"
+                onClick={() => {
+                  if (!onQcPass) return;
+                  void onQcPass(card.id);
+                }}
+              >
+                QC Pass
+              </button>
+              <button
+                type="button"
+                className="border border-madder/60 px-1.5 py-0.5 font-mono text-[11px] uppercase tracking-wide text-madder hover:border-madder"
+                onClick={() => {
+                  if (!onQcFail) return;
+                  const faultRaw =
+                    window.prompt(
+                      `Fault attribution (${REWORK_FAULT_ATTRIBUTIONS.join(" | ")})`,
+                      "UNDETERMINED",
+                    ) ?? "";
+                  const fault = REWORK_FAULT_ATTRIBUTIONS.find(
+                    (f) => f === faultRaw.trim(),
+                  );
+                  if (!fault) {
+                    window.alert("Invalid fault attribution.");
+                    return;
+                  }
+                  const reason =
+                    window.prompt("Rework reason?", "QC failed")?.trim() ||
+                    "QC failed";
+                  void onQcFail(card.id, fault, reason);
+                }}
+              >
+                QC Fail
+              </button>
+            </>
+          ) : null}
+        </div>
+      )}
 
       {card.blockedReason ? (
         <p className="mt-1 text-[11px] text-madder">{card.blockedReason}</p>
