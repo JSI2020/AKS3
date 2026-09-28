@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   Building2,
   Check,
+  ChevronRight,
   Layers,
   Package,
   Palette,
@@ -19,6 +20,7 @@ import {
 import { Money } from "@/modules/ui";
 import { cn } from "@/lib/utils";
 import { LightRevenueLine } from "@/modules/admin/viz";
+import { CountUp } from "@/modules/admin/count-up";
 
 import type {
   OverviewSummary,
@@ -27,25 +29,28 @@ import type {
 } from "./queries";
 import type { OverviewCharts } from "./overview-charts";
 
+type Tone = "danger" | "warn" | "money" | "info";
+
 type CardMeta = {
   icon: LucideIcon;
   alert?: boolean;
   money?: boolean;
+  tone: Tone;
   priority: number;
 };
 
 const CARD_META: Record<string, CardMeta> = {
-  "at-risk": { icon: AlertTriangle, alert: true, priority: 0 },
-  "balance-due": { icon: Wallet, alert: true, money: true, priority: 1 },
-  "low-stock": { icon: Layers, alert: true, priority: 2 },
-  "awaiting-confirmation": { icon: ShoppingBag, priority: 3 },
-  "measurements-unverified": { icon: Ruler, priority: 4 },
-  "bank-transfer": { icon: Building2, money: true, priority: 5 },
-  "designs-review": { icon: Palette, priority: 6 },
+  "at-risk": { icon: AlertTriangle, alert: true, tone: "danger", priority: 0 },
+  "balance-due": { icon: Wallet, alert: true, money: true, tone: "money", priority: 1 },
+  "low-stock": { icon: Layers, alert: true, tone: "warn", priority: 2 },
+  "awaiting-confirmation": { icon: ShoppingBag, tone: "info", priority: 3 },
+  "measurements-unverified": { icon: Ruler, tone: "info", priority: 4 },
+  "bank-transfer": { icon: Building2, money: true, tone: "money", priority: 5 },
+  "designs-review": { icon: Palette, tone: "info", priority: 6 },
 };
 
 function metaFor(id: string): CardMeta {
-  return CARD_META[id] ?? { icon: ShoppingBag, priority: 99 };
+  return CARD_META[id] ?? { icon: ShoppingBag, tone: "info", priority: 99 };
 }
 
 function sortCards(cards: TodayActionCard[]): TodayActionCard[] {
@@ -74,47 +79,35 @@ export function TodayActionCards({ cards }: { cards: TodayActionCard[] }) {
   }
   const ordered = sortCards(cards);
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-      {ordered.map((card) => {
-        const { icon: Icon, alert, money } = metaFor(card.id);
-        const isAlert = Boolean(alert) && card.count > 0;
-        const isMoney = Boolean(money) && card.count > 0 && !isAlert;
-        const quiet = card.count === 0;
+    <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
+      {ordered.map((card, i) => {
+        const { icon: Icon, tone } = metaFor(card.id);
+        const live = card.count > 0;
         return (
           <Link
             key={card.id}
             href={card.href}
+            style={{ ["--i" as string]: String(i) }}
             className={cn(
-              "group flex items-center gap-3.5 border bg-milk px-4 py-4 transition-colors hover:border-ink/30",
-              isAlert
-                ? "border-ink/10 border-s-[3px] border-s-madder"
-                : "border-ink/10",
-              quiet && "opacity-50",
+              "adm-rise adm-tile group flex items-center gap-3.5 px-4 py-4",
+              live ? `adm-tile--${tone} is-live` : "is-quiet",
             )}
           >
-            <div
+            <span
               className={cn(
-                "flex size-10 shrink-0 items-center justify-center",
-                isAlert
-                  ? "bg-madder/10"
-                  : isMoney
-                    ? "bg-zari/15"
-                    : "bg-ink/[0.05]",
+                "adm-chip size-11",
+                !live && "opacity-55",
               )}
             >
-              <Icon
-                className={cn(
-                  "size-[18px]",
-                  isAlert
-                    ? "text-madder"
-                    : isMoney
-                      ? "text-zari"
-                      : "text-ink/45",
-                )}
-              />
-            </div>
+              <Icon className="size-[19px]" aria-hidden />
+            </span>
             <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-medium leading-snug text-ink">
+              <p
+                className={cn(
+                  "text-[13px] font-medium leading-snug",
+                  live ? "text-ink" : "text-ink/55",
+                )}
+              >
                 {card.label}
               </p>
               {card.hint ? (
@@ -123,17 +116,18 @@ export function TodayActionCards({ cards }: { cards: TodayActionCard[] }) {
                 </p>
               ) : null}
             </div>
-            <span
-              className={cn(
-                "shrink-0 font-display text-[2rem] font-light leading-none tabular-nums",
-                isAlert
-                  ? "text-madder"
-                  : quiet
-                    ? "text-ink/25"
-                    : "text-ink",
-              )}
-            >
-              {card.count}
+            <span className="flex shrink-0 items-center gap-1.5">
+              <CountUp
+                value={card.count}
+                className={cn(
+                  "adm-count font-display text-[2.1rem] font-light leading-none",
+                  !live && "text-ink/25",
+                )}
+              />
+              <ChevronRight
+                className="adm-go size-4 text-ink/40"
+                aria-hidden
+              />
             </span>
           </Link>
         );
@@ -213,11 +207,11 @@ function PipelineColumn({
         return (
           <div
             key={step.label}
-            className="relative flex items-center gap-3 border border-ink/12 bg-milk px-4 py-4"
+            className="adm-tile relative flex items-center gap-3 px-4 py-4"
           >
-            <div className="relative z-[1] flex size-9 shrink-0 items-center justify-center bg-ink/[0.05]">
-              <Icon className="size-4 text-ink/45" />
-            </div>
+            <span className="adm-chip relative z-[1] size-9">
+              <Icon className="size-4" aria-hidden />
+            </span>
             <div className="min-w-0 flex-1">
               <p className="font-sans text-[10px] uppercase tracking-[0.14em] text-ink/50">
                 {step.label}
@@ -254,7 +248,7 @@ export function TodayNumbers({
 
   return (
     <div className="grid gap-3 lg:grid-cols-3">
-      <section className="flex flex-col border border-ink/12 bg-milk p-5 lg:col-span-2">
+      <section className="adm-tile adm-tile--money is-live flex flex-col p-5 lg:col-span-2">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <p className="font-sans text-[10px] uppercase tracking-[0.16em] text-ink/50">
@@ -314,16 +308,8 @@ function SummaryTile({
         <p className="font-sans text-[10px] uppercase tracking-[0.16em] text-ink/50">
           {label}
         </p>
-        <span
-          className={cn(
-            "flex size-8 items-center justify-center",
-            accent ? "bg-zari/15" : "bg-ink/[0.05]",
-          )}
-        >
-          <Icon
-            className={cn("size-4", accent ? "text-zari" : "text-ink/40")}
-            aria-hidden
-          />
+        <span className="adm-chip size-8">
+          <Icon className="size-4" aria-hidden />
         </span>
       </div>
       <p className="mt-4 font-display text-[2.15rem] font-light leading-none text-ink">
@@ -332,8 +318,10 @@ function SummaryTile({
     </>
   );
 
-  const className =
-    "block border border-ink/12 bg-milk px-5 py-5 transition-colors hover:border-ink/25";
+  const className = cn(
+    "adm-tile block px-5 py-5",
+    accent ? "adm-tile--money is-live" : "adm-tile--info",
+  );
 
   if (href) {
     return (

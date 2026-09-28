@@ -1,3 +1,5 @@
+import "@/modules/admin/admin-experience.css";
+
 import { auth } from "@/auth";
 import {
   getPermissionsForUser,

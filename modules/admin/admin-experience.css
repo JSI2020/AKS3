@@ -1,0 +1,158 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   AKS Admin — experience layer
+   Adds vibrancy (semantic status colour, elevation, motion) WITHOUT leaving
+   the AKS palette, and WITHOUT touching globals.css — kept here so storefront
+   work in globals.css never collides with it. Scoped under .admin-shell.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.admin-shell {
+  /* Status palette — muted, jewel-toned, sits beside indigo/greige/zari. */
+  --adm-danger: #b23b47;
+  --adm-danger-ink: #8c2f39;
+  --adm-warn: #c07f2a;
+  --adm-warn-ink: #9a6410;
+  --adm-ok: #4f7d5f;
+  --adm-ok-ink: #3c6349;
+  --adm-money: #b08d4c;
+  --adm-money-ink: #8f6f34;
+  --adm-info: #3a4f7a;
+  --adm-info-ink: #2a3760;
+
+  --adm-elev:
+    0 1px 2px rgba(22, 24, 29, 0.05),
+    0 10px 26px -14px rgba(22, 24, 29, 0.22);
+  --adm-elev-hi:
+    0 2px 6px rgba(22, 24, 29, 0.07),
+    0 20px 44px -16px rgba(22, 24, 29, 0.32);
+}
+
+/* ── Elevated tile ──────────────────────────────────────────────────────── */
+.adm-tile {
+  position: relative;
+  background: var(--color-milk);
+  border: 1px solid color-mix(in oklab, var(--color-ink) 9%, transparent);
+  box-shadow: var(--adm-elev);
+  overflow: hidden;
+  transition:
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 0.3s ease;
+}
+
+/* Colour-fill accent bar along the top edge. */
+.adm-tile::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: var(--adm-accent, transparent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.adm-tile.is-live::before,
+.adm-tile:hover::before,
+.adm-tile:focus-visible::before {
+  transform: scaleX(1);
+}
+
+.adm-tile:hover,
+.adm-tile:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: var(--adm-elev-hi);
+  border-color: color-mix(in oklab, var(--color-ink) 20%, transparent);
+  outline: none;
+}
+
+.adm-tile--danger {
+  --adm-accent: var(--adm-danger);
+}
+.adm-tile--warn {
+  --adm-accent: var(--adm-warn);
+}
+.adm-tile--money {
+  --adm-accent: var(--adm-money);
+}
+.adm-tile--info {
+  --adm-accent: var(--adm-info);
+}
+.adm-tile--ok {
+  --adm-accent: var(--adm-ok);
+}
+
+.adm-tile.is-quiet {
+  box-shadow: none;
+  background: color-mix(in oklab, var(--color-milk) 60%, var(--color-greige));
+}
+
+/* ── Gradient icon chip ─────────────────────────────────────────────────── */
+.adm-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  color: var(--adm-chip-ink, var(--color-ink));
+  background: linear-gradient(
+    150deg,
+    color-mix(in oklab, var(--adm-accent, var(--color-ink)) 20%, var(--color-milk)),
+    color-mix(in oklab, var(--adm-accent, var(--color-ink)) 6%, var(--color-milk))
+  );
+  box-shadow: inset 0 0 0 1px
+    color-mix(in oklab, var(--adm-accent, var(--color-ink)) 24%, transparent);
+}
+
+.adm-tile--danger .adm-chip { --adm-chip-ink: var(--adm-danger-ink); }
+.adm-tile--warn .adm-chip { --adm-chip-ink: var(--adm-warn-ink); }
+.adm-tile--money .adm-chip { --adm-chip-ink: var(--adm-money-ink); }
+.adm-tile--info .adm-chip { --adm-chip-ink: var(--adm-info-ink); }
+.adm-tile--ok .adm-chip { --adm-chip-ink: var(--adm-ok-ink); }
+
+/* ── Count colour by tone ───────────────────────────────────────────────── */
+.adm-count {
+  font-variant-numeric: tabular-nums;
+}
+.adm-tile--danger .adm-count { color: var(--adm-danger-ink); }
+.adm-tile--warn .adm-count { color: var(--adm-warn-ink); }
+.adm-tile--money .adm-count { color: var(--adm-money-ink); }
+.adm-tile--info .adm-count { color: var(--adm-info-ink); }
+
+/* Directional cue that slides in on hover. */
+.adm-go {
+  opacity: 0;
+  transform: translateX(-6px);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.adm-tile:hover .adm-go,
+.adm-tile:focus-visible .adm-go {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* ── Entrance: staggered rise (index via --i) ───────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .adm-rise {
+    animation: adm-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: calc(var(--i, 0) * 55ms);
+  }
+}
+
+@keyframes adm-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adm-tile {
+    transition: none;
+  }
+}
+
+/* ── Sidebar active state gets a soft gold glow ─────────────────────────── */
+.admin-shell aside nav a[aria-current="page"] {
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-zari) 30%, transparent);
+}
