@@ -129,6 +129,7 @@ export function SizeTablePhotoImport({
       fd.set("blockId", blockId);
       fd.set("pieceKey", pieceKey);
       fd.set("unit", unit);
+      fd.set("sizesJson", JSON.stringify(sizes));
       fd.set(
         "rowsJson",
         JSON.stringify(

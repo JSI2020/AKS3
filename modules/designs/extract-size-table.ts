@@ -41,6 +41,28 @@ export type ExtractSizeTableResult =
 
 const SIZE_CANON = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
 
+const SIZE_WORDS: Record<string, string> = {
+  EXTRASMALL: "XS",
+  XSMALL: "XS",
+  SMALL: "S",
+  MEDIUM: "M",
+  MED: "M",
+  LARGE: "L",
+  EXTRALARGE: "XL",
+  XLARGE: "XL",
+  XXLARGE: "XXL",
+  XXLARGE2: "XXL",
+};
+
+/** Canonicalise a size header: strip "base", map size words to XS…XXXL. */
+function canonSize(s: string): string {
+  const n = s
+    .toUpperCase()
+    .replace(/BASE|·/g, "")
+    .replace(/[^A-Z0-9]/g, "");
+  return SIZE_WORDS[n] ?? n;
+}
+
 /** Normalise a label for fuzzy matching: lowercase, strip punctuation/spaces. */
 function norm(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -153,10 +175,12 @@ export async function extractSizeTableFromImage(
       userPrompt: USER_PROMPT,
     });
 
-    const sizesRaw = (table.sizes ?? [])
-      .map((s) => String(s).toUpperCase().replace(/[^A-Z0-9]/g, ""))
-      .filter(Boolean);
-    const sizes = sizesRaw.filter((s) => SIZE_CANON.includes(s));
+    // Canonical size headers in the order the model read them (deduped).
+    const headerOrder: string[] = [];
+    for (const s of table.sizes ?? []) {
+      const c = canonSize(String(s));
+      if (c && !headerOrder.includes(c)) headerOrder.push(c);
+    }
     const unit = (table.unit ?? "in").toLowerCase().startsWith("c") ? "cm" : "in";
 
     const rows: ExtractedRow[] = [];
@@ -165,11 +189,9 @@ export async function extractSizeTableFromImage(
       if (!rawLabel) continue;
       const values: Record<string, number> = {};
       for (const [k, v] of Object.entries(r.values ?? {})) {
-        const sizeKey = String(k).toUpperCase().replace(/[^A-Z0-9]/g, "");
+        const sizeKey = canonSize(String(k));
         const num = toNumber(v);
-        if (num != null && (sizes.length === 0 || sizes.includes(sizeKey))) {
-          values[sizeKey] = num;
-        }
+        if (sizeKey && num != null) values[sizeKey] = num;
       }
       if (Object.keys(values).length === 0) continue;
       const match = matchLabel(rawLabel);
@@ -185,12 +207,23 @@ export async function extractSizeTableFromImage(
       return { ok: false, error: "No measurement rows were read from the image." };
     }
 
+    // Final column list: the model's header order, plus any size keys that
+    // only appeared on rows. Prefer the canonical XS→XXXL ordering when the
+    // columns are standard sizes.
+    const sizeSet = new Set(headerOrder);
+    for (const r of rows) for (const k of Object.keys(r.values)) sizeSet.add(k);
+    const allSizes = [...sizeSet];
+    const allStandard = allSizes.every((s) => SIZE_CANON.includes(s));
+    const sizes = allStandard
+      ? SIZE_CANON.filter((s) => sizeSet.has(s))
+      : headerOrder.length > 0
+        ? [...headerOrder, ...allSizes.filter((s) => !headerOrder.includes(s))]
+        : allSizes;
+
     return {
       ok: true,
       unit,
-      sizes: sizes.length > 0 ? sizes : SIZE_CANON.filter((s) =>
-        rows.some((r) => r.values[s] != null),
-      ),
+      sizes,
       rows,
       unmatchedCount: rows.filter((r) => !r.measurementKey).length,
     };
@@ -238,6 +271,7 @@ export async function applyExtractedSizeTable(
     const blockId = String(fd.get("blockId") ?? "");
     const unit = String(fd.get("unit") ?? "in") === "cm" ? "cm" : "in";
     const rowsJson = String(fd.get("rowsJson") ?? "[]");
+    const sizesJson = String(fd.get("sizesJson") ?? "[]");
 
     if (!designId || !blockId) {
       return { ok: false, error: "Missing design or size chart." };
@@ -275,26 +309,52 @@ export async function applyExtractedSizeTable(
       byKey.set(r.measurementKey, r.values);
     }
 
+    // The photo's column order (as read). Fall back to the keys seen on the
+    // rows if the caller didn't send it.
+    let photoSizes: string[] = [];
+    try {
+      photoSizes = (JSON.parse(sizesJson) as string[]).filter(Boolean);
+    } catch {
+      photoSizes = [];
+    }
+    if (photoSizes.length === 0) {
+      const seen = new Set<string>();
+      for (const v of byKey.values())
+        for (const k of Object.keys(v)) seen.add(k);
+      photoSizes = [...seen];
+    }
+    // Anchor the photo's base to the chart's base: prefer the matching label,
+    // else the photo's middle column.
+    const photoBaseIdx =
+      photoSizes.indexOf(baseLabel) >= 0
+        ? photoSizes.indexOf(baseLabel)
+        : Math.floor((photoSizes.length - 1) / 2);
+
     const newRows = order.map((mk, i) => {
       const vals = byKey.get(mk)!;
-      // Convert present sizes to hundredths.
+      // Map the photo's values onto this chart's size labels: exact label
+      // match first, then by position relative to the base. This keeps the
+      // real numbers even when the photo's column names differ from ours.
       const h: Record<string, number> = {};
-      for (const [size, v] of Object.entries(vals)) {
-        if (labels.includes(size)) h[size] = toHundredths(v, unit);
-      }
-      // Base value: the photo's M, else the nearest present size to base.
-      let baseValue = h[baseLabel];
-      if (baseValue == null) {
-        let best: number | null = null;
-        let bestDist = Infinity;
-        for (const size of Object.keys(h)) {
-          const d = Math.abs(labels.indexOf(size) - baseIdx);
-          if (d < bestDist) {
-            bestDist = d;
-            best = h[size]!;
+      for (let bi = 0; bi < labels.length; bi++) {
+        const label = labels[bi]!;
+        let raw = vals[label];
+        if (raw == null) {
+          const pi = photoBaseIdx + (bi - baseIdx);
+          if (pi >= 0 && pi < photoSizes.length) {
+            raw = vals[photoSizes[pi]!];
           }
         }
-        baseValue = best ?? 0;
+        if (raw != null) h[label] = toHundredths(raw, unit);
+      }
+
+      // Base value: the chart's base if we have it, else the median of what we
+      // read (never silently 0 when the photo had real numbers).
+      let baseValue = h[baseLabel];
+      if (baseValue == null) {
+        const nums = Object.values(h).sort((a, b) => a - b);
+        baseValue =
+          nums.length > 0 ? nums[Math.floor((nums.length - 1) / 2)]! : 0;
       }
 
       // Per-step overrides reproduce arbitrary per-size values exactly.
