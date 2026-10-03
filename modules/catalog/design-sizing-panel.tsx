@@ -3,8 +3,9 @@
 import type { OverlayPlacements } from "@/modules/sizing/garment-size-guide";
 import { useState } from "react";
 
-import { DesignSizeGuideContent } from "./design-size-guide-content";
+import { DesignSizeGuideModal } from "./design-size-guide-modal";
 import type { DesignSizeChartPublic } from "./resolve-design-size-chart";
+import "./size-guide.css";
 
 type Props = {
   chart: DesignSizeChartPublic | null;
@@ -13,8 +14,14 @@ type Props = {
   availableSizeLabels: readonly string[];
   selectedSizeLabel: string | null;
   onSelectSize: (sizeLabel: string) => void;
+  designName?: string;
 };
 
+/**
+ * Storefront size guide — an elegant branded popup rather than an inline
+ * table. The button sits under the add-to-bag area; the modal shows every
+ * piece's chart (Kameez, Trouser…).
+ */
 export function DesignSizingPanel({
   chart,
   ghostUrl,
@@ -22,35 +29,42 @@ export function DesignSizingPanel({
   availableSizeLabels,
   selectedSizeLabel,
   onSelectSize,
+  designName,
 }: Props) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
+
+  const hasChart =
+    Boolean(chart?.components.some((c) => c.rows.length > 0)) || Boolean(ghostUrl);
+  if (!hasChart) return null;
 
   return (
-    <div className="mt-8 border border-greige-deep">
+    <>
       <button
         type="button"
-        onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-center justify-between px-4 py-3 text-start"
-        aria-expanded={open}
+        className="aks-sg-trigger"
+        onClick={() => setOpen(true)}
       >
-        <span className="font-display text-[18px] text-ink">Size &amp; fit</span>
-        <span className="text-[13px] text-madder" aria-hidden>
-          {open ? "−" : "+"}
-        </span>
+        <svg viewBox="0 0 24 24" aria-hidden>
+          <path
+            d="M3 8h18M3 8v8h18V8M7 8v3M11 8v4M15 8v3M19 8v4"
+            strokeWidth="1.3"
+            strokeLinecap="round"
+          />
+        </svg>
+        Size &amp; fit guide
       </button>
 
-      {open ? (
-        <div className="size-guide-body border-t border-greige-deep px-4 py-5">
-          <DesignSizeGuideContent
-            chart={chart}
-            ghostUrl={ghostUrl}
-            placements={placements}
-            availableSizeLabels={availableSizeLabels}
-            selectedSizeLabel={selectedSizeLabel}
-            onSelectSize={onSelectSize}
-          />
-        </div>
-      ) : null}
-    </div>
+      <DesignSizeGuideModal
+        open={open}
+        onClose={() => setOpen(false)}
+        chart={chart}
+        ghostUrl={ghostUrl}
+        placements={placements}
+        availableSizeLabels={availableSizeLabels}
+        selectedSizeLabel={selectedSizeLabel}
+        onSelectSize={onSelectSize}
+        designName={designName}
+      />
+    </>
   );
 }

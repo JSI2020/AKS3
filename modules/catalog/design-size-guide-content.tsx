@@ -17,6 +17,8 @@ type Props = {
   availableSizeLabels: readonly string[];
   selectedSizeLabel: string | null;
   onSelectSize?: (sizeLabel: string) => void;
+  /** Label each piece's table with its garment name (Kameez, Trouser…). */
+  showPieceNames?: boolean;
 };
 
 export function DesignSizeGuideContent({
@@ -26,6 +28,7 @@ export function DesignSizeGuideContent({
   availableSizeLabels,
   selectedSizeLabel,
   onSelectSize,
+  showPieceNames = false,
 }: Props) {
   const [unit, setUnit] = useState<DisplayUnit>("in");
   const [highlightKey, setHighlightKey] = useState<string | null>(null);
@@ -98,15 +101,26 @@ export function DesignSizeGuideContent({
           if (section.rows.length === 0) return null;
 
           return (
-            <div key={section.componentKey} className="size-guide-table-wrap">
+            <div
+              key={section.componentKey}
+              className="size-guide-table-wrap aks-sg-piece"
+            >
+              {showPieceNames ? (
+                <div className="aks-sg-piece-name">{section.componentName}</div>
+              ) : null}
               <table className="size-guide-table">
                 <thead>
                   <tr>
                     <th scope="col">Measure</th>
                     {sizeColumns.map((sizeLabel) => {
                       const active = selectedSizeLabel === sizeLabel;
+                      const isBaseCol = sizeLabel === chart.baseSizeLabel;
                       return (
-                        <th key={sizeLabel} scope="col">
+                        <th
+                          key={sizeLabel}
+                          scope="col"
+                          className={isBaseCol ? "base-col" : undefined}
+                        >
                           {onSelectSize ? (
                             <button
                               type="button"

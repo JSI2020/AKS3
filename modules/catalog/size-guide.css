@@ -1,0 +1,319 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   AKS Atelier — storefront size-guide popup
+   Elegant, branded modal. Scoped under .shop-proto and kept OUT of
+   globals.css so storefront work there never collides with it. It restyles
+   the existing DesignSizeGuideContent markup inside .aks-sg-body.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.shop-proto .aks-sg-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(12px, 4vw, 32px);
+  background: rgba(18, 20, 28, 0.56);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  animation: aks-sg-fade 0.3s ease both;
+}
+
+@keyframes aks-sg-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.shop-proto .aks-sg-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(660px, 100%);
+  max-height: min(88vh, 880px);
+  overflow: hidden;
+  background: var(--milk, #f4eee1);
+  border: 1px solid var(--line, #e4ddcd);
+  border-radius: 2px;
+  box-shadow: 0 32px 90px -24px rgba(16, 18, 26, 0.62);
+  animation: aks-sg-rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes aks-sg-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shop-proto .aks-sg-scrim,
+  .shop-proto .aks-sg-modal {
+    animation: none;
+  }
+}
+
+/* ── Branded header ─────────────────────────────────────────────────────── */
+.shop-proto .aks-sg-head {
+  position: relative;
+  flex: none;
+  padding: 26px 30px 20px;
+  text-align: center;
+  border-bottom: 1px solid var(--line, #e4ddcd);
+  background:
+    radial-gradient(
+      120% 90% at 50% 0%,
+      rgba(176, 141, 76, 0.07),
+      transparent 70%
+    ),
+    var(--milk, #f4eee1);
+}
+
+.shop-proto .aks-sg-mark {
+  font-family: var(--font-shop-display), "Cormorant Garamond", Georgia, serif;
+  font-size: 21px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  color: var(--ink, #22283a);
+}
+
+.shop-proto .aks-sg-mark .dot {
+  color: var(--gold, #b0894c);
+  margin: 0 0.12em;
+}
+
+.shop-proto .aks-sg-eyebrow {
+  margin-top: 7px;
+  font-size: 9px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--taupe, #8d7e66);
+}
+
+.shop-proto .aks-sg-title {
+  margin-top: 16px;
+  font-family: var(--font-shop-display), "Cormorant Garamond", Georgia, serif;
+  font-weight: 300;
+  font-size: clamp(1.5rem, 4vw, 1.9rem);
+  line-height: 1.1;
+  color: var(--ink, #22283a);
+}
+
+.shop-proto .aks-sg-title::after {
+  content: "";
+  display: block;
+  width: 34px;
+  height: 1px;
+  margin: 12px auto 0;
+  background: var(--gold, #b0894c);
+}
+
+.shop-proto .aks-sg-sub {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--taupe, #8d7e66);
+}
+
+.shop-proto .aks-sg-close {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--taupe, #8d7e66);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.shop-proto .aks-sg-close:hover {
+  color: var(--ink, #22283a);
+  border-color: var(--line, #e4ddcd);
+}
+
+/* ── Scrollable body ────────────────────────────────────────────────────── */
+.shop-proto .aks-sg-body {
+  overflow-y: auto;
+  padding: 10px 30px 32px;
+}
+
+/* Unit toggle — gold pill */
+.shop-proto .aks-sg-body .size-guide-unit-toggle {
+  display: inline-flex;
+  gap: 2px;
+  margin: 20px 0 8px;
+  padding: 3px;
+  border: 1px solid var(--line, #e4ddcd);
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--milk) 60%, #fff);
+}
+
+.shop-proto .aks-sg-body .size-guide-unit-toggle button {
+  min-width: 48px;
+  padding: 5px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--taupe, #8d7e66);
+  cursor: pointer;
+  transition:
+    background 0.25s ease,
+    color 0.25s ease;
+}
+
+.shop-proto .aks-sg-body .size-guide-unit-toggle button.on,
+.shop-proto .aks-sg-body .size-guide-unit-toggle button[aria-pressed="true"] {
+  background: var(--ink, #22283a);
+  color: var(--milk, #f4eee1);
+}
+
+/* Per-piece heading */
+.shop-proto .aks-sg-piece {
+  margin-top: 26px;
+}
+
+.shop-proto .aks-sg-piece:first-of-type {
+  margin-top: 14px;
+}
+
+.shop-proto .aks-sg-piece-name {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--taupe, #8d7e66);
+}
+
+.shop-proto .aks-sg-piece-name::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line, #e4ddcd);
+}
+
+/* Tables */
+.shop-proto .aks-sg-body .size-guide-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.shop-proto .aks-sg-body .size-guide-table thead th {
+  padding: 9px 10px;
+  font-family: var(--font-shop-sans), sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--taupe, #8d7e66);
+  text-align: center;
+  border-bottom: 1px solid var(--ink, #22283a);
+}
+
+.shop-proto .aks-sg-body .size-guide-table thead th:first-child {
+  text-align: start;
+}
+
+.shop-proto .aks-sg-body .size-guide-table tbody th {
+  padding: 10px 10px;
+  font-weight: 400;
+  text-align: start;
+  color: var(--espresso, #4a3b2f);
+}
+
+.shop-proto .aks-sg-body .size-guide-table tbody td {
+  padding: 10px 10px;
+  text-align: center;
+  font-family: var(--font-shop-data, var(--font-shop-sans)), monospace;
+  color: var(--ink, #22283a);
+  border-top: 1px solid color-mix(in oklab, var(--line) 70%, transparent);
+}
+
+.shop-proto .aks-sg-body .size-guide-table tbody td.base {
+  background: rgba(176, 141, 76, 0.1);
+  color: var(--ink, #22283a);
+  font-weight: 500;
+}
+
+.shop-proto .aks-sg-body .size-guide-table thead th.base-col {
+  color: var(--gold, #b0894c);
+}
+
+.shop-proto .aks-sg-body .size-guide-table tbody tr:hover td {
+  background: rgba(176, 141, 76, 0.06);
+}
+
+.shop-proto .aks-sg-body .size-guide-table tbody tr:hover td.base {
+  background: rgba(176, 141, 76, 0.16);
+}
+
+/* Visual overlay (ghost silhouette) sits above the tables, centred. */
+.shop-proto .aks-sg-body .size-guide-visual,
+.shop-proto .aks-sg-body .size-guide-ghost-only {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.shop-proto .aks-sg-body .size-guide-ghost-img {
+  max-height: 240px;
+  width: auto;
+}
+
+.shop-proto .aks-sg-note {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line, #e4ddcd);
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--taupe, #8d7e66);
+  text-align: center;
+}
+
+/* ── Trigger button on the PDP ──────────────────────────────────────────── */
+.shop-proto .aks-sg-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 28px;
+  padding: 11px 18px;
+  border: 1px solid var(--line, #e4ddcd);
+  border-radius: 2px;
+  background: transparent;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--espresso, #4a3b2f);
+  cursor: pointer;
+  transition:
+    border-color 0.25s ease,
+    color 0.25s ease,
+    background 0.25s ease;
+}
+
+.shop-proto .aks-sg-trigger:hover {
+  border-color: var(--ink, #22283a);
+  color: var(--ink, #22283a);
+  background: color-mix(in oklab, var(--milk) 50%, #fff);
+}
+
+.shop-proto .aks-sg-trigger svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  fill: none;
+}

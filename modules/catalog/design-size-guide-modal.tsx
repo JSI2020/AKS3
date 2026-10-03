@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 
 import { DesignSizeGuideContent } from "./design-size-guide-content";
 import type { DesignSizeChartPublic } from "./resolve-design-size-chart";
+import "./size-guide.css";
 
 type Props = {
   open: boolean;
@@ -16,6 +17,8 @@ type Props = {
   availableSizeLabels: readonly string[];
   selectedSizeLabel: string | null;
   onSelectSize: (sizeLabel: string) => void;
+  /** Design name, shown as the subtitle. */
+  designName?: string;
 };
 
 export function DesignSizeGuideModal({
@@ -27,6 +30,7 @@ export function DesignSizeGuideModal({
   availableSizeLabels,
   selectedSizeLabel,
   onSelectSize,
+  designName,
 }: Props) {
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -48,9 +52,18 @@ export function DesignSizeGuideModal({
 
   if (!open) return null;
 
+  const pieceNames =
+    chart?.components
+      .filter((c) => c.rows.length > 0)
+      .map((c) => c.componentName) ?? [];
+  const subtitle =
+    pieceNames.length > 0
+      ? pieceNames.join(" · ")
+      : (designName ?? "Finished garment measurements");
+
   const content = (
     <div
-      className="shop-proto size-guide-scrim"
+      className="shop-proto aks-sg-scrim"
       role="presentation"
       onClick={onClose}
     >
@@ -58,24 +71,30 @@ export function DesignSizeGuideModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="size-guide-modal"
+        className="aks-sg-modal"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="size-guide-head">
-          <h2 id={titleId} className="size-guide-title">
-            Size &amp; fit
+        <div className="aks-sg-head">
+          <div className="aks-sg-mark">
+            AKS<span className="dot">&#183;</span>ATELIER
+          </div>
+          <div className="aks-sg-eyebrow">Minimalist luxury &#183; East meets West</div>
+          <h2 id={titleId} className="aks-sg-title">
+            Size &amp; Fit Guide
           </h2>
+          <p className="aks-sg-sub">{subtitle}</p>
           <button
             ref={closeRef}
             type="button"
             onClick={onClose}
-            className="size-guide-close"
+            className="aks-sg-close"
+            aria-label="Close size guide"
           >
-            Close
+            &#215;
           </button>
         </div>
 
-        <div className="size-guide-body">
+        <div className="aks-sg-body">
           <DesignSizeGuideContent
             chart={chart}
             ghostUrl={ghostUrl}
@@ -83,7 +102,12 @@ export function DesignSizeGuideModal({
             availableSizeLabels={availableSizeLabels}
             selectedSizeLabel={selectedSizeLabel}
             onSelectSize={onSelectSize}
+            showPieceNames
           />
+          <p className="aks-sg-note">
+            All measurements are of the finished garment, cut to standard sizes.
+            Between sizes? We cut M unless you tell us otherwise.
+          </p>
         </div>
       </div>
     </div>
