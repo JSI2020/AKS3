@@ -13,6 +13,7 @@ import {
   applyStandardStyle,
   recognizeDesignSizing,
 } from "./recognize-sizing-action";
+import { SizeTablePhotoImport } from "./size-table-import";
 import {
   groupedStylePresets,
   stylePresetValue,
@@ -873,6 +874,20 @@ function PieceSizeGuide({
               ) : null}
             </div>
           ) : null}
+
+          <SizeTablePhotoImport
+            designId={designId}
+            blockId={activeBlockId}
+            pieceKey={pieceKey}
+            onApplied={(newId) => {
+              if (newId !== activeBlockId) {
+                setActiveBlockId(newId);
+                onForked(newId);
+              }
+              setLoadKey((k) => k + 1);
+              router.refresh();
+            }}
+          />
         </div>
       ) : null}
 

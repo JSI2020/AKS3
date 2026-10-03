@@ -201,3 +201,152 @@ export async function extractSizeTableFromImage(
     };
   }
 }
+
+// ── Apply confirmed rows into the design's chart ───────────────────────────
+
+/** Snap hundredths-of-an-inch to the quarter-inch grid (floor at 0). */
+function snapQuarter(v: number): number {
+  return Math.max(0, Math.round(v / 25) * 25);
+}
+
+/** value in the chart's unit → hundredths of an inch, snapped. */
+function toHundredths(value: number, unit: "in" | "cm"): number {
+  const inches = unit === "cm" ? value / 2.54 : value;
+  return snapQuarter(Math.round(inches * 100));
+}
+
+export type ApplyExtractedResult =
+  | { ok: true; blockId: string; filled: number }
+  | { ok: false; error: string };
+
+type ConfirmedRow = {
+  measurementKey: string;
+  values: Record<string, number>;
+};
+
+/**
+ * Replace the design's chart with EXACTLY the rows read from the photo (the
+ * user has already confirmed each row's measurement key). Per-size values are
+ * reproduced precisely via base + gradeOverrides, so the editor shows what the
+ * photo showed, and every other size stays editable from M.
+ */
+export async function applyExtractedSizeTable(
+  fd: FormData,
+): Promise<ApplyExtractedResult> {
+  try {
+    const designId = String(fd.get("designId") ?? "");
+    const blockId = String(fd.get("blockId") ?? "");
+    const unit = String(fd.get("unit") ?? "in") === "cm" ? "cm" : "in";
+    const rowsJson = String(fd.get("rowsJson") ?? "[]");
+
+    if (!designId || !blockId) {
+      return { ok: false, error: "Missing design or size chart." };
+    }
+
+    let confirmed: ConfirmedRow[];
+    try {
+      confirmed = (JSON.parse(rowsJson) as ConfirmedRow[]).filter(
+        (r) => r.measurementKey && r.values && Object.keys(r.values).length > 0,
+      );
+    } catch {
+      return { ok: false, error: "Could not read the confirmed rows." };
+    }
+    if (confirmed.length === 0) {
+      return { ok: false, error: "No rows to apply." };
+    }
+
+    await requireSizingEdit(designId);
+
+    const resolved = await resolveEditableBlockId(blockId, designId);
+    const editBlockId = resolved.blockId;
+
+    const detail = await getSizeBlock(editBlockId, { designId });
+    if (!detail) return { ok: false, error: "Size chart not found." };
+    const labels = detail.sizeLabels;
+    const baseLabel = detail.baseSizeLabel;
+    const baseIdx = labels.indexOf(baseLabel);
+    if (baseIdx < 0) return { ok: false, error: "Chart has no base size." };
+
+    // De-dupe by measurement key (last wins), keep input order for sortOrder.
+    const byKey = new Map<string, Record<string, number>>();
+    const order: string[] = [];
+    for (const r of confirmed) {
+      if (!byKey.has(r.measurementKey)) order.push(r.measurementKey);
+      byKey.set(r.measurementKey, r.values);
+    }
+
+    const newRows = order.map((mk, i) => {
+      const vals = byKey.get(mk)!;
+      // Convert present sizes to hundredths.
+      const h: Record<string, number> = {};
+      for (const [size, v] of Object.entries(vals)) {
+        if (labels.includes(size)) h[size] = toHundredths(v, unit);
+      }
+      // Base value: the photo's M, else the nearest present size to base.
+      let baseValue = h[baseLabel];
+      if (baseValue == null) {
+        let best: number | null = null;
+        let bestDist = Infinity;
+        for (const size of Object.keys(h)) {
+          const d = Math.abs(labels.indexOf(size) - baseIdx);
+          if (d < bestDist) {
+            bestDist = d;
+            best = h[size]!;
+          }
+        }
+        baseValue = best ?? 0;
+      }
+
+      // Per-step overrides reproduce arbitrary per-size values exactly.
+      const overrides: Record<string, number> = {};
+      // Upward from base.
+      for (let idx = baseIdx + 1; idx < labels.length; idx++) {
+        const cur = labels[idx]!;
+        const prev = labels[idx - 1]!;
+        if (h[cur] == null) continue;
+        const prevVal = h[prev] ?? (idx - 1 === baseIdx ? baseValue : h[cur]!);
+        overrides[cur] = h[cur]! - prevVal;
+      }
+      // Downward from base.
+      for (let idx = baseIdx - 1; idx >= 0; idx--) {
+        const cur = labels[idx]!;
+        const prev = labels[idx + 1]!;
+        if (h[cur] == null) continue;
+        const prevVal = h[prev] ?? (idx + 1 === baseIdx ? baseValue : h[cur]!);
+        overrides[cur] = prevVal - h[cur]!;
+      }
+
+      // Collapse a uniform grade to a single increment for a clean chart.
+      const steps = Object.values(overrides);
+      const uniform =
+        steps.length > 0 && steps.every((s) => s === steps[0]);
+      const gradeIncrement = uniform ? steps[0]! : 0;
+
+      return {
+        id: uuidv7(),
+        blockId: editBlockId,
+        measurementKey: mk,
+        baseValue,
+        gradeIncrement,
+        gradeOverrides: uniform ? {} : overrides,
+        sortOrder: i,
+      };
+    });
+
+    await db.transaction(async (tx) => {
+      await tx
+        .delete(sizeBlockCells)
+        .where(eq(sizeBlockCells.blockId, editBlockId));
+      await tx.delete(sizeBlockRows).where(eq(sizeBlockRows.blockId, editBlockId));
+      await tx.insert(sizeBlockRows).values(newRows);
+    });
+
+    revalidatePath(`/admin/designs/${designId}`);
+    return { ok: true, blockId: editBlockId, filled: newRows.length };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Could not apply the size table.",
+    };
+  }
+}
