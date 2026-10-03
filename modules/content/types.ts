@@ -43,6 +43,7 @@ export const DEFAULT_SECTIONS_ORDER = [
   "hero",
   "statement",
   "categories",
+  "lookbook",
   "edit",
   "fabric",
   "atelier",

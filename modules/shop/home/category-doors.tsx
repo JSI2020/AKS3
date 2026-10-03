@@ -84,7 +84,12 @@ export function CategoryDoors({
         {doors.map((door) => {
           const meta = doorMeta(door.categoryKey);
           return (
-            <Link key={door.id} href={door.href as "/collections"} className="cat">
+            <Link
+              key={door.id}
+              href={door.href as "/collections"}
+              className="cat"
+              aria-label={exploreTemplate(door.displayName)}
+            >
               {/* Always paint door tone underneath — pale/missing photos stay readable */}
               <ImageSlotPlaceholder
                 silhouette={meta.silhouette}
@@ -102,11 +107,8 @@ export function CategoryDoors({
                 </div>
               ) : null}
               <div className="label">
-                <div className="n serif">{door.displayName}</div>
-                <div className="m">{normalizeDashes(door.caption)}</div>
-                <div className="go">
-                  {exploreTemplate(door.displayName)} →
-                </div>
+                <span className="cat-pill">{door.displayName}</span>
+                <span className="m">{normalizeDashes(door.caption)}</span>
               </div>
             </Link>
           );

@@ -161,12 +161,6 @@ export function DesignCard({
       </div>
       <div className="meta">
         <div className="n serif">{design.name}</div>
-        {design.subtitle ? (
-          <div className="sil" style={{ fontStyle: "normal", opacity: 0.85 }}>
-            {design.subtitle}
-          </div>
-        ) : null}
-        <div className="sil">{silLine}</div>
         <div className="p">
           <Money value={display.priceMinor} />
           {display.compareAtMinor ? (
@@ -180,8 +174,14 @@ export function DesignCard({
               <Money value={display.compareAtMinor} />
             </span>
           ) : null}
-          <span>· ready to wear</span>
         </div>
+        {design.subtitle ? (
+          <div className="sil sil-secondary" style={{ fontStyle: "normal" }}>
+            {design.subtitle}
+          </div>
+        ) : (
+          <div className="sil sil-secondary">{silLine}</div>
+        )}
       </div>
     </Link>
   );

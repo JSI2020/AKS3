@@ -1,37 +1,41 @@
+import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
 import { CustomerLoginForm } from "@/modules/account/customer-login-form";
-import {
-  configuredSocialProviders,
-  whatsappLoginEnabled,
-} from "@/modules/auth/social-providers";
+import { storefrontAuthChannels } from "@/modules/auth/social-providers";
+import { AksBrandLogo } from "@/modules/shop/shell/aks-brand-logo";
 import { ShopPageContainer } from "@/modules/shop/shell/page-container";
 
 export default async function CustomerLoginPage() {
   const session = await auth();
+  const t = await getTranslations("AccountLogin");
 
   if (session?.user?.id) {
     redirect("/account/orders");
   }
 
+  const channels = storefrontAuthChannels();
+
   return (
     <ShopPageContainer>
-      <div className="mx-auto max-w-[640px] py-8 md:py-12">
-        <h1 className="font-display text-[26px] font-medium text-ink md:text-[28px]">
-          Sign in
-        </h1>
-        <p className="mt-3 text-[15px] leading-relaxed text-ink/70">
-          Track orders, see what we&apos;re making for you, and keep your details
-          for next time.
-        </p>
+      <section className="auth-gate" aria-labelledby="auth-title">
+        <div className="auth-gate-panel">
+          <div className="auth-gate-brand">
+            <AksBrandLogo variant="mark" className="auth-gate-mark" />
+            <p className="auth-gate-eyebrow">{t("eyebrow")}</p>
+            <h1 id="auth-title" className="auth-gate-title serif">
+              {t("title")}
+            </h1>
+            <p className="auth-gate-lead">{t("lead")}</p>
+          </div>
 
-        <CustomerLoginForm
-          redirectTo="/account/orders"
-          socialProviders={configuredSocialProviders()}
-          whatsappEnabled={whatsappLoginEnabled()}
-        />
-      </div>
+          <CustomerLoginForm
+            redirectTo="/account/orders"
+            channels={channels}
+          />
+        </div>
+      </section>
     </ShopPageContainer>
   );
 }

@@ -213,7 +213,7 @@ async function main() {
     }
 
     const slug = demoSlug(look);
-    const name = `Demo ${look.name}`;
+    const name = look.name;
     const fabric = fabricRows[i % fabricRows.length]!;
     const fabricB = fabricRows[(i + 3) % fabricRows.length]!;
     const swatch =

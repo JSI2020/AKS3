@@ -11,6 +11,8 @@ import { Reveal } from "./reveal";
 
 type DoorFilter = { label: string; tag: string };
 
+const HOME_MOSAIC_CAP = 10;
+
 function matchesFilter(
   design: PublishedDesignCard,
   filter: DoorFilter | null,
@@ -38,15 +40,23 @@ export function EditGrid({
   const activeFilter = filters[filterIdx] ?? null;
 
   const filtered = useMemo(
-    () => designs.filter((d) => matchesFilter(d, activeFilter)),
+    () =>
+      designs
+        .filter((d) => matchesFilter(d, activeFilter))
+        .slice(0, HOME_MOSAIC_CAP),
     [designs, activeFilter],
   );
 
   return (
     <Reveal as="section" className="edit" id="edit">
       <div className="edit-head">
-        <span className="eyebrow">{t("editEyebrow")}</span>
-        <h2 className="serif">{t("editTitle")}</h2>
+        <div className="edit-head-copy">
+          <span className="eyebrow">{t("editEyebrow")}</span>
+          <h2 className="serif">{t("editTitle")}</h2>
+        </div>
+        <Link href="/collections/all" className="edit-explore">
+          {t("editExplore")}
+        </Link>
       </div>
       <div className="filters">
         {filters.map((f, i) => (
@@ -60,31 +70,34 @@ export function EditGrid({
           </button>
         ))}
       </div>
-      <div className="grid">
+      <div className="grid edit-mosaic">
         {filtered.length === 0 ? (
-          <p className="col-span-full text-[14px]" style={{ color: "var(--taupe)" }}>
+          <p
+            className="col-span-full text-[14px]"
+            style={{ color: "var(--taupe)" }}
+          >
             No pieces in this edit yet.{" "}
             <Link href="/collections/all" className="underline">
               Browse all pieces
             </Link>
           </p>
         ) : (
-          filtered.map((d) => (
-            <DesignCard key={d.id} design={d} doorLabels={doorLabels} />
+          filtered.map((d, i) => (
+            <div
+              key={d.id}
+              className={
+                i === 0 ? "edit-mosaic-item is-feature" : "edit-mosaic-item"
+              }
+              style={{ ["--mosaic-i" as string]: String(i) }}
+            >
+              <DesignCard design={d} doorLabels={doorLabels} />
+            </div>
           ))
         )}
       </div>
-      <p className="mt-8">
-        <Link
-          href="/collections/all"
-          className="text-[11px] uppercase tracking-[0.14em]"
-          style={{
-            borderBottom: "1px solid var(--ink)",
-            paddingBottom: 3,
-            color: "var(--ink)",
-          }}
-        >
-          View all pieces →
+      <p className="edit-all">
+        <Link href="/collections/all" className="edit-all-link">
+          {t("editViewAll")}
         </Link>
       </p>
     </Reveal>

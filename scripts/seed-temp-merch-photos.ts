@@ -14,69 +14,70 @@ import sharp from "sharp";
 type Shot = { url: string; credit: string; label: string };
 
 /**
- * Quiet, covered, natural-cloth lean — Unsplash License (free to use).
- * Not AKS garments; stand-ins until real photography ships.
+ * Quiet western-leaning pret stills — covered linen shirts, soft dresses, rails.
+ * Milk–ivory–bone. Unsplash License. Illustrative only — not AKS garments.
+ * IDs verified in prior soft-launch QA. First shot = homepage hero.
  */
 const TEMP_SHOTS: Shot[] = [
   {
-    url: "https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=1200&q=80",
+    url: "https://images.unsplash.com/photo-1745313452052-0e4e341f326c?auto=format&fit=crop&w=1200&q=80",
     credit: "Unsplash",
-    label: "Ivory tailored set",
+    label: "White set, studio calm",
   },
   {
-    url: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?auto=format&fit=crop&w=1200&q=80",
+    url: "https://images.unsplash.com/photo-1713881587420-113c1c43e28a?auto=format&fit=crop&w=1200&q=80",
     credit: "Unsplash",
-    label: "Soft white dress drape",
+    label: "Ivory linen mandarin tunic",
+  },
+  {
+    url: "https://images.unsplash.com/photo-1752825609278-f9696bc9d7bd?auto=format&fit=crop&w=1200&q=80",
+    credit: "Unsplash",
+    label: "Bone linen shirt, western drape",
+  },
+  {
+    url: "https://images.unsplash.com/photo-1713881676551-b16f22ce4719?auto=format&fit=crop&w=1200&q=80",
+    credit: "Unsplash",
+    label: "Bone linen blouson",
   },
   {
     url: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=80",
     credit: "Unsplash",
-    label: "Cream editorial look",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&w=1200&q=80",
-    credit: "Unsplash",
-    label: "Linen street quiet",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1200&q=80",
-    credit: "Unsplash",
-    label: "Neutral coat and dress",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1558171813-4c088753af8f?auto=format&fit=crop&w=1200&q=80",
-    credit: "Unsplash",
-    label: "Bone blouse close",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=1200&q=80",
-    credit: "Unsplash",
-    label: "Eastern festive silk",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=1200&q=80",
-    credit: "Unsplash",
-    label: "Heritage drape",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=1200&q=80",
-    credit: "Unsplash",
-    label: "Long gown line",
+    label: "Cream hangers editorial",
   },
   {
     url: "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?auto=format&fit=crop&w=1200&q=80",
     credit: "Unsplash",
-    label: "Soft maxi length",
+    label: "Soft maxi length drape",
   },
   {
-    url: "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=1200&q=80",
+    url: "https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03?auto=format&fit=crop&w=1200&q=80",
     credit: "Unsplash",
-    label: "Minimal dress column",
+    label: "Modest mandarin dress",
   },
   {
-    url: "https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?auto=format&fit=crop&w=1200&q=80",
+    url: "https://images.unsplash.com/photo-1596433904747-e8b061219a71?auto=format&fit=crop&w=1200&q=80",
     credit: "Unsplash",
-    label: "Red accent occasion",
+    label: "Folded linen neutrals",
+  },
+  {
+    url: "https://images.unsplash.com/photo-1637110276019-df15ad496674?auto=format&fit=crop&w=1200&q=80",
+    credit: "Unsplash",
+    label: "Hand gathering linen cloth",
+  },
+  {
+    url: "https://images.unsplash.com/photo-1545042746-ec9e5a59b359?auto=format&fit=crop&w=1200&q=80",
+    credit: "Unsplash",
+    label: "Linen textile stack",
+  },
+  {
+    url: "https://images.unsplash.com/photo-1485968579580-b6d095142e6e?auto=format&fit=crop&w=1200&q=80",
+    credit: "Unsplash",
+    label: "White shirt, everyday western line",
+  },
+  {
+    url: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&w=1200&q=80",
+    credit: "Unsplash",
+    label: "Ivory knit blouse, quiet cloth",
   },
 ];
 

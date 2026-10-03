@@ -116,11 +116,25 @@ export function HomepageAdmin({
       ? (editBlock!.payload.designIds as string[])
       : [],
   );
-  const [order, setOrder] = useState(
-    draft.sectionsOrder?.length
-      ? draft.sectionsOrder
-      : [...DEFAULT_SECTIONS_ORDER],
-  );
+  const [order, setOrder] = useState(() => {
+    const base =
+      draft.sectionsOrder?.length
+        ? draft.sectionsOrder
+        : [...DEFAULT_SECTIONS_ORDER];
+    if (base.includes("lookbook")) return base;
+    const next = [...base];
+    const cats = next.indexOf("categories");
+    if (cats >= 0) {
+      next.splice(cats + 1, 0, "lookbook");
+      return next;
+    }
+    const edit = next.indexOf("edit");
+    if (edit >= 0) {
+      next.splice(edit, 0, "lookbook");
+      return next;
+    }
+    return [...DEFAULT_SECTIONS_ORDER];
+  });
   const [enabled, setEnabled] = useState(draft.sectionsEnabled ?? {});
   const [statement, setStatement] = useState(
     String(statementBlock?.payload.text ?? ""),

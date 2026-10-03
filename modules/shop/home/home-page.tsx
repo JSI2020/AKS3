@@ -4,6 +4,7 @@ import { cloneElement, isValidElement } from "react";
 import { getPublishedDesigns } from "@/modules/catalog/queries";
 import { getContentList } from "@/modules/content/pages";
 import { loadStorefrontHomepage } from "@/modules/content/homepage";
+import { DEFAULT_SECTIONS_ORDER } from "@/modules/content/types";
 import { listHouseCollections } from "@/modules/catalog/house-collections-queries";
 import {
   automaticPercentForDesign,
@@ -15,10 +16,28 @@ import { CategoryDoors } from "./category-doors";
 import { EditGrid } from "./edit-grid";
 import { FabricLibrary } from "./fabric-library";
 import { HomeHero } from "./hero";
+import { Lookbook } from "./lookbook";
 import { HomeStatement } from "./statement";
 
 function sectionOn(enabled: Record<string, boolean>, key: string): boolean {
   return enabled[key] !== false;
+}
+
+/** Ensure newer section keys appear even when CMS order predates them. */
+function normalizeSectionOrder(order: string[]): string[] {
+  if (order.includes("lookbook")) return order;
+  const next = [...order];
+  const cats = next.indexOf("categories");
+  if (cats >= 0) {
+    next.splice(cats + 1, 0, "lookbook");
+    return next;
+  }
+  const edit = next.indexOf("edit");
+  if (edit >= 0) {
+    next.splice(edit, 0, "lookbook");
+    return next;
+  }
+  return [...DEFAULT_SECTIONS_ORDER];
 }
 
 export async function HomePage() {
@@ -81,13 +100,22 @@ export async function HomePage() {
 
   const statementText = homepage?.statement || t("statement");
 
-  const order = homepage?.sectionsOrder?.length
-    ? homepage.sectionsOrder
-    : ["hero", "statement", "categories", "edit", "fabric", "atelier"];
+  const order = normalizeSectionOrder(
+    homepage?.sectionsOrder?.length
+      ? homepage.sectionsOrder
+      : [...DEFAULT_SECTIONS_ORDER],
+  );
   const enabled = homepage?.sectionsEnabled ?? {};
 
   const heroSlide = homepage?.heroes[0] ?? null;
+  const lookbookHero = homepage?.heroes[1] ?? null;
   const tiles = homepage?.tiles ?? [];
+  const lookbookDesign = designs[0] ?? null;
+  const lookbookImage =
+    lookbookHero?.desktopImageUrl ||
+    lookbookHero?.mobileImageUrl ||
+    lookbookDesign?.thumbnail?.url ||
+    null;
 
   const heroFallback = {
     eyebrow: t("heroEyebrow"),
@@ -111,6 +139,15 @@ export async function HomePage() {
         eyebrow={t("heroEyebrow")}
         title={t("catsTitle")}
         exploreTemplate={(name) => t("exploreDoor", { name })}
+      />
+    ),
+    lookbook: (
+      <Lookbook
+        design={lookbookDesign}
+        imageUrl={lookbookImage}
+        eyebrow={t("lookbookEyebrow")}
+        line={t("lookbookLine")}
+        cta={t("lookbookCta")}
       />
     ),
     edit: (

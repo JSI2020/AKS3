@@ -1,33 +1,39 @@
+import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
 import { auth } from "@/auth";
 import { WhatsappLoginForm } from "@/modules/account/whatsapp-login-form";
 import { whatsappLoginEnabled } from "@/modules/auth/social-providers";
+import { AksBrandLogo } from "@/modules/shop/shell/aks-brand-logo";
 import { ShopPageContainer } from "@/modules/shop/shell/page-container";
 
 export default async function WhatsappLoginPage() {
   const session = await auth();
+  const t = await getTranslations("AccountLogin");
 
   if (session?.user?.id) {
     redirect("/account/orders");
   }
-  // Feature-flagged: fall back to the main sign-in page when not configured.
   if (!whatsappLoginEnabled()) {
     redirect("/account/login");
   }
 
   return (
     <ShopPageContainer>
-      <div className="mx-auto max-w-[640px] py-8 md:py-12">
-        <h1 className="font-display text-[26px] font-medium text-ink md:text-[28px]">
-          Sign in with WhatsApp
-        </h1>
-        <p className="mt-3 text-[15px] leading-relaxed text-ink/70">
-          We&apos;ll send a one-time code to your WhatsApp number.
-        </p>
+      <section className="auth-gate" aria-labelledby="auth-wa-title">
+        <div className="auth-gate-panel">
+          <div className="auth-gate-brand">
+            <AksBrandLogo variant="mark" className="auth-gate-mark" />
+            <p className="auth-gate-eyebrow">{t("eyebrow")}</p>
+            <h1 id="auth-wa-title" className="auth-gate-title serif">
+              {t("whatsappTitle")}
+            </h1>
+            <p className="auth-gate-lead">{t("whatsappLead")}</p>
+          </div>
 
-        <WhatsappLoginForm redirectTo="/account/orders" />
-      </div>
+          <WhatsappLoginForm redirectTo="/account/orders" />
+        </div>
+      </section>
     </ShopPageContainer>
   );
 }

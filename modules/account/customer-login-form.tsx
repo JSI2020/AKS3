@@ -1,9 +1,20 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import { signIn } from "next-auth/react";
+import { useTranslations } from "next-intl";
 
 import { useRouter } from "@/i18n/routing";
+import type { AuthChannelKey, AuthChannelState } from "@/modules/auth/social-providers";
+
+import {
+  EmailChannelIcon,
+  FacebookChannelIcon,
+  GoogleChannelIcon,
+  InstagramChannelIcon,
+  TikTokChannelIcon,
+  WhatsAppChannelIcon,
+} from "./auth-channel-icons";
 
 type Step = "email" | "code" | "profile";
 
@@ -12,27 +23,20 @@ export type SocialProvider = "google" | "facebook";
 type Props = {
   /** Where to land after signing in (locale-relative, e.g. "/account/orders"). */
   redirectTo: string;
-  /** OAuth providers that are configured on the server. */
-  socialProviders: SocialProvider[];
-  /** Whether WhatsApp-code sign-in is available. */
-  whatsappEnabled: boolean;
+  /** Channel buttons: live ones sign in; soon ones stay visible but disabled. */
+  channels: AuthChannelState[];
 };
 
-const inputClass =
-  "w-full border border-greige-deep bg-greige px-3 py-2.5 text-[15px] text-ink outline-none focus:border-ink";
-const labelClass =
-  "mb-1.5 block text-[12px] uppercase tracking-[0.06em] text-ink/55";
-
-const SOCIAL_LABEL: Record<SocialProvider, string> = {
-  google: "Continue with Google",
-  facebook: "Continue with Facebook",
+const CHANNEL_ICON: Record<AuthChannelKey, ReactNode> = {
+  whatsapp: <WhatsAppChannelIcon className="auth-channel-icon" />,
+  facebook: <FacebookChannelIcon className="auth-channel-icon" />,
+  instagram: <InstagramChannelIcon className="auth-channel-icon" />,
+  tiktok: <TikTokChannelIcon className="auth-channel-icon" />,
+  google: <GoogleChannelIcon className="auth-channel-icon" />,
 };
 
-export function CustomerLoginForm({
-  redirectTo,
-  socialProviders,
-  whatsappEnabled,
-}: Props) {
+export function CustomerLoginForm({ redirectTo, channels }: Props) {
+  const t = useTranslations("AccountLogin");
   const router = useRouter();
   const [step, setStep] = useState<Step>("email");
   const [email, setEmail] = useState("");
@@ -44,7 +48,6 @@ export function CustomerLoginForm({
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  /** Complete sign-in; extra fields are only used when the account is created. */
   async function completeSignIn() {
     const result = await signIn("customer-otp", {
       email,
@@ -55,7 +58,7 @@ export function CustomerLoginForm({
       redirect: false,
     });
     if (!result || result.error) {
-      setError("Something went wrong. Request a new code and try again.");
+      setError(t("errorGeneric"));
       return;
     }
     router.replace(redirectTo);
@@ -77,20 +80,19 @@ export function CustomerLoginForm({
         devCode?: string;
       };
       if (!res.ok) {
-        setError(data.error ?? "Could not send a code. Try again.");
+        setError(data.error ?? t("errorSendCode"));
         return;
       }
       setMessage(
         data.devCode
-          ? "Dev code filled below."
-          : (data.message ?? "Check your email for a sign-in code."),
+          ? t("devCodeFilled")
+          : (data.message ?? t("checkEmail")),
       );
       if (data.devCode) setCode(data.devCode);
       setStep("code");
     });
   }
 
-  /** Verify the code, then either finish (returning) or ask for a name (new). */
   function checkCode() {
     setError(null);
     startTransition(async () => {
@@ -105,9 +107,7 @@ export function CustomerLoginForm({
         error?: string;
       };
       if (!data.ok) {
-        setError(
-          data.error ?? "That code didn't work. Request a new one and try again.",
-        );
+        setError(data.error ?? t("errorBadCode"));
         return;
       }
       if (data.isNew) {
@@ -119,47 +119,81 @@ export function CustomerLoginForm({
     });
   }
 
-  const hasSocial = socialProviders.length > 0 || whatsappEnabled;
+  function onChannel(channel: AuthChannelState) {
+    if (channel.status !== "live" || pending) return;
+    if (channel.key === "whatsapp") {
+      router.push("/account/login/whatsapp");
+      return;
+    }
+    if (channel.key === "facebook" || channel.key === "google") {
+      void signIn(channel.key, { callbackUrl: redirectTo });
+    }
+  }
+
+  const channelLabel = (key: AuthChannelKey) => {
+    switch (key) {
+      case "whatsapp":
+        return t("channelWhatsapp");
+      case "facebook":
+        return t("channelFacebook");
+      case "instagram":
+        return t("channelInstagram");
+      case "tiktok":
+        return t("channelTiktok");
+      case "google":
+        return t("channelGoogle");
+    }
+  };
+
+  const liveChannels = channels.filter((c) => c.status === "live");
+  const soonChannels = channels.filter((c) => c.status === "soon");
+  const emailLeads = liveChannels.length === 0;
+
+  function renderChannels(list: AuthChannelState[]) {
+    if (list.length === 0) return null;
+    return (
+      <div className="auth-channels" role="list">
+        {list.map((channel) => {
+          const live = channel.status === "live";
+          return (
+            <button
+              key={channel.key}
+              type="button"
+              role="listitem"
+              disabled={!live || pending}
+              aria-disabled={!live}
+              onClick={() => onChannel(channel)}
+              className={`auth-channel${live ? "" : " is-soon"}`}
+            >
+              <span className="auth-channel-mark" aria-hidden>
+                {CHANNEL_ICON[channel.key]}
+              </span>
+              <span className="auth-channel-label">
+                {channelLabel(channel.key)}
+              </span>
+              {!live ? (
+                <span className="auth-channel-soon">{t("soon")}</span>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
-    <div className="mt-6 max-w-sm">
-      {hasSocial ? (
+    <div className="auth-form">
+      {step === "email" && !emailLeads ? (
         <>
-          <div className="flex flex-col gap-2.5">
-            {socialProviders.map((provider) => (
-              <button
-                key={provider}
-                type="button"
-                disabled={pending}
-                onClick={() =>
-                  signIn(provider, { callbackUrl: redirectTo })
-                }
-                className="w-full border border-ink/20 bg-milk px-3 py-2.5 text-[14px] font-medium text-ink transition-colors hover:border-ink disabled:opacity-50"
-              >
-                {SOCIAL_LABEL[provider]}
-              </button>
-            ))}
-            {whatsappEnabled ? (
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => router.push("/account/login/whatsapp")}
-                className="w-full border border-ink/20 bg-milk px-3 py-2.5 text-[14px] font-medium text-ink transition-colors hover:border-ink disabled:opacity-50"
-              >
-                Continue with WhatsApp
-              </button>
-            ) : null}
-          </div>
-          <div className="my-5 flex items-center gap-3 text-[12px] uppercase tracking-[0.08em] text-ink/40">
-            <span className="h-px flex-1 bg-greige-deep" />
-            or by email
-            <span className="h-px flex-1 bg-greige-deep" />
+          {renderChannels(liveChannels)}
+          <div className="auth-divider" role="separator">
+            <span>{t("orEmail")}</span>
           </div>
         </>
       ) : null}
 
       <form
-        className="flex flex-col gap-4"
+        className="auth-fields"
         onSubmit={(e) => {
           e.preventDefault();
           if (step === "email") requestCode();
@@ -167,27 +201,26 @@ export function CustomerLoginForm({
           else startTransition(() => completeSignIn());
         }}
       >
-        <div>
-          <label htmlFor="login-email" className={labelClass}>
-            Email
-          </label>
-          <input
-            id="login-email"
-            type="email"
-            autoComplete="email"
-            required
-            disabled={step !== "email" || pending}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className={inputClass}
-          />
+        <div className="auth-field">
+          <label htmlFor="login-email">{t("emailLabel")}</label>
+          <div className="auth-input-wrap">
+            <EmailChannelIcon className="auth-input-icon" />
+            <input
+              id="login-email"
+              type="email"
+              autoComplete="email"
+              required
+              disabled={step !== "email" || pending}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t("emailPlaceholder")}
+            />
+          </div>
         </div>
 
         {step === "code" ? (
-          <div>
-            <label htmlFor="login-code" className={labelClass}>
-              One-time code
-            </label>
+          <div className="auth-field">
+            <label htmlFor="login-code">{t("codeLabel")}</label>
             <input
               id="login-code"
               type="text"
@@ -201,20 +234,16 @@ export function CustomerLoginForm({
               onChange={(e) =>
                 setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
               }
-              className={`${inputClass} font-data tracking-[0.3em]`}
+              className="auth-code"
             />
           </div>
         ) : null}
 
         {step === "profile" ? (
           <>
-            <p className="text-[14px] text-ink/70">
-              Welcome — let&apos;s set up your account.
-            </p>
-            <div>
-              <label htmlFor="signup-name" className={labelClass}>
-                Your name
-              </label>
+            <p className="auth-note">{t("welcomeNew")}</p>
+            <div className="auth-field">
+              <label htmlFor="signup-name">{t("nameLabel")}</label>
               <input
                 id="signup-name"
                 type="text"
@@ -223,13 +252,10 @@ export function CustomerLoginForm({
                 disabled={pending}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className={inputClass}
               />
             </div>
-            <div>
-              <label htmlFor="signup-whatsapp" className={labelClass}>
-                WhatsApp number (optional)
-              </label>
+            <div className="auth-field">
+              <label htmlFor="signup-whatsapp">{t("whatsappOptional")}</label>
               <input
                 id="signup-whatsapp"
                 type="tel"
@@ -237,47 +263,43 @@ export function CustomerLoginForm({
                 disabled={pending}
                 value={whatsapp}
                 onChange={(e) => setWhatsapp(e.target.value)}
-                placeholder="03001234567"
-                className={inputClass}
+                placeholder={t("whatsappPlaceholder")}
               />
-              <p className="mt-1.5 text-[12px] text-ink/50">
-                For order updates. You can add it later instead.
-              </p>
+              <p className="auth-hint">{t("whatsappHint")}</p>
             </div>
-            <label className="flex items-start gap-2.5 text-[13px] text-ink/75">
+            <label className="auth-check">
               <input
                 type="checkbox"
                 checked={marketing}
                 onChange={(e) => setMarketing(e.target.checked)}
                 disabled={pending}
-                className="mt-0.5"
               />
-              <span>Email me first looks at new editions. No spam.</span>
+              <span>{t("marketingOptIn")}</span>
             </label>
           </>
         ) : null}
 
-        {message ? <p className="text-[14px] text-ink/70">{message}</p> : null}
+        {message ? <p className="auth-message">{message}</p> : null}
         {error ? (
-          <p className="text-[14px] text-madder" role="alert">
+          <p className="auth-error" role="alert">
             {error}
           </p>
         ) : null}
 
         <button type="submit" disabled={pending} className="btn-primary">
           {pending
-            ? "Please wait…"
+            ? t("pleaseWait")
             : step === "email"
-              ? "Email me a code"
+              ? t("emailCode")
               : step === "code"
-                ? "Continue"
-                : "Create account"}
+                ? t("continue")
+                : t("createAccount")}
         </button>
 
         {step !== "email" ? (
           <button
             type="button"
-            className="text-start text-[13px] text-ink/60 underline-offset-2 hover:underline"
+            className="auth-back"
             onClick={() => {
               setStep("email");
               setCode("");
@@ -288,16 +310,32 @@ export function CustomerLoginForm({
               setMessage(null);
             }}
           >
-            Use a different email
+            {t("differentEmail")}
           </button>
         ) : null}
       </form>
 
+      {step === "email" ? (
+        <>
+          {emailLeads && soonChannels.length > 0 ? (
+            <div className="auth-divider" role="separator">
+              <span>{t("orChannels")}</span>
+            </div>
+          ) : null}
+          {emailLeads ? renderChannels(soonChannels) : null}
+          {!emailLeads && soonChannels.length > 0 ? (
+            <>
+              <div className="auth-divider" role="separator">
+                <span>{t("alsoSoon")}</span>
+              </div>
+              {renderChannels(soonChannels)}
+            </>
+          ) : null}
+        </>
+      ) : null}
+
       {step !== "profile" ? (
-        <p className="mt-6 text-[13px] leading-relaxed text-ink/55">
-          No account needed to order — this is only for order history and saved
-          details. New here? Signing in creates your account.
-        </p>
+        <p className="auth-footnote">{t("footnote")}</p>
       ) : null}
     </div>
   );

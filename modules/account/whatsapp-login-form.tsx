@@ -2,17 +2,16 @@
 
 import { useState, useTransition } from "react";
 import { signIn } from "next-auth/react";
+import { useTranslations } from "next-intl";
 
 import { Link, useRouter } from "@/i18n/routing";
 
+import { WhatsAppChannelIcon } from "./auth-channel-icons";
+
 type Step = "phone" | "code";
 
-const inputClass =
-  "w-full border border-greige-deep bg-greige px-3 py-2.5 text-[15px] text-ink outline-none focus:border-ink";
-const labelClass =
-  "mb-1.5 block text-[12px] uppercase tracking-[0.06em] text-ink/55";
-
 export function WhatsappLoginForm({ redirectTo }: { redirectTo: string }) {
+  const t = useTranslations("AccountLogin");
   const router = useRouter();
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
@@ -36,13 +35,13 @@ export function WhatsappLoginForm({ redirectTo }: { redirectTo: string }) {
         devCode?: string;
       };
       if (!res.ok) {
-        setError(data.error ?? "Could not send a code. Try again.");
+        setError(data.error ?? t("errorSendCode"));
         return;
       }
       setMessage(
         data.devCode
-          ? "Dev code filled below."
-          : (data.message ?? "Check WhatsApp for your sign-in code."),
+          ? t("devCodeFilled")
+          : (data.message ?? t("checkWhatsapp")),
       );
       if (data.devCode) setCode(data.devCode);
       setStep("code");
@@ -58,7 +57,7 @@ export function WhatsappLoginForm({ redirectTo }: { redirectTo: string }) {
         redirect: false,
       });
       if (!result || result.error) {
-        setError("That code didn't work. Request a new one and try again.");
+        setError(t("errorBadCode"));
         return;
       }
       router.replace(redirectTo);
@@ -67,37 +66,36 @@ export function WhatsappLoginForm({ redirectTo }: { redirectTo: string }) {
   }
 
   return (
-    <div className="mt-6 max-w-sm">
+    <div className="auth-form">
       <form
-        className="flex flex-col gap-4"
+        className="auth-fields"
         onSubmit={(e) => {
           e.preventDefault();
           if (step === "phone") requestCode();
           else verify();
         }}
       >
-        <div>
-          <label htmlFor="wa-phone" className={labelClass}>
-            WhatsApp number
-          </label>
-          <input
-            id="wa-phone"
-            type="tel"
-            autoComplete="tel"
-            required
-            disabled={step !== "phone" || pending}
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="03001234567"
-            className={inputClass}
-          />
+        <div className="auth-field">
+          <label htmlFor="wa-phone">{t("phoneLabel")}</label>
+          <div className="auth-input-wrap">
+            <WhatsAppChannelIcon className="auth-input-icon" />
+            <input
+              id="wa-phone"
+              type="tel"
+              autoComplete="tel"
+              required
+              disabled={step !== "phone" || pending}
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder={t("whatsappPlaceholder")}
+            />
+          </div>
+          <p className="auth-hint">{t("phoneHint")}</p>
         </div>
 
         {step === "code" ? (
-          <div>
-            <label htmlFor="wa-code" className={labelClass}>
-              Code from WhatsApp
-            </label>
+          <div className="auth-field">
+            <label htmlFor="wa-code">{t("codeLabel")}</label>
             <input
               id="wa-code"
               type="text"
@@ -111,30 +109,30 @@ export function WhatsappLoginForm({ redirectTo }: { redirectTo: string }) {
               onChange={(e) =>
                 setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
               }
-              className={`${inputClass} font-data tracking-[0.3em]`}
+              className="auth-code"
             />
           </div>
         ) : null}
 
-        {message ? <p className="text-[14px] text-ink/70">{message}</p> : null}
+        {message ? <p className="auth-message">{message}</p> : null}
         {error ? (
-          <p className="text-[14px] text-madder" role="alert">
+          <p className="auth-error" role="alert">
             {error}
           </p>
         ) : null}
 
         <button type="submit" disabled={pending} className="btn-primary">
           {pending
-            ? "Please wait…"
+            ? t("pleaseWait")
             : step === "phone"
-              ? "Send me a code"
-              : "Sign in"}
+              ? t("whatsappCode")
+              : t("continue")}
         </button>
 
         {step === "code" ? (
           <button
             type="button"
-            className="text-start text-[13px] text-ink/60 underline-offset-2 hover:underline"
+            className="auth-back"
             onClick={() => {
               setStep("phone");
               setCode("");
@@ -142,17 +140,14 @@ export function WhatsappLoginForm({ redirectTo }: { redirectTo: string }) {
               setMessage(null);
             }}
           >
-            Use a different number
+            {t("differentPhone")}
           </button>
         ) : null}
       </form>
 
-      <Link
-        href="/account/login"
-        className="mt-6 inline-block text-[13px] text-ink/60 underline-offset-2 hover:underline"
-      >
-        ← Other ways to sign in
-      </Link>
+      <p className="auth-footnote">
+        <Link href="/account/login">{t("backToSignIn")}</Link>
+      </p>
     </div>
   );
 }

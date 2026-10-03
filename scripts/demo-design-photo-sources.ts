@@ -2,6 +2,11 @@
  * Modest pret product photos from small Chinese / regional boutiques
  * (testing only — never famous Pakistani labels).
  *
+ * CAUTION: Storefront soft-launch should prefer
+ * `scripts/seed-temp-merch-photos.ts` (quiet Unsplash TEMP_SHOTS). Boutique
+ * Shopify feeds can include off-brand imagery; always re-run temp-merch
+ * after `db:seed:demo-designs` before showing the shop.
+ *
  * Sources: Nüwa Hanfu, HUI Modest — curated apparel only.
  */
 import type { CatalogueLook } from "../packages/db/house-catalogue-looks";

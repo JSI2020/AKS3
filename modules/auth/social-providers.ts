@@ -1,15 +1,16 @@
 import type { SocialProvider } from "@/modules/account/customer-login-form";
 
 /**
- * Which storefront sign-in methods are actually usable, decided purely by what
- * credentials the environment carries. A provider with no keys is never
- * offered — no dead buttons, and no need to redeploy code to turn one on.
+ * Storefront sign-in channels that are actually usable, decided by env.
+ * Dead OAuth buttons are never offered as live actions.
  *
- * Env, per provider:
+ * Env:
  *   Google    → AUTH_GOOGLE_ID + AUTH_GOOGLE_SECRET
  *   Facebook  → AUTH_FACEBOOK_ID + AUTH_FACEBOOK_SECRET
- *   WhatsApp  → WHATSAPP_ACCESS_TOKEN + WHATSAPP_PHONE_NUMBER_ID (already used
- *               by the messaging provider) + AKS_WHATSAPP_LOGIN=1 to opt in
+ *   WhatsApp  → WHATSAPP_ACCESS_TOKEN + WHATSAPP_PHONE_NUMBER_ID + AKS_WHATSAPP_LOGIN=1
+ *
+ * Instagram Login Kit and TikTok Login Kit are not wired yet — the UI may
+ * show them as "Soon" so the intended house set is visible without fake OAuth.
  */
 export function configuredSocialProviders(): SocialProvider[] {
   const providers: SocialProvider[] = [];
@@ -28,4 +29,33 @@ export function whatsappLoginEnabled(): boolean {
     !!process.env.WHATSAPP_ACCESS_TOKEN &&
     !!process.env.WHATSAPP_PHONE_NUMBER_ID
   );
+}
+
+/** Preferred channel order on the Quiet Luxury sign-in panel. */
+export type AuthChannelKey =
+  | "whatsapp"
+  | "facebook"
+  | "instagram"
+  | "tiktok"
+  | "google";
+
+export type AuthChannelState = {
+  key: AuthChannelKey;
+  /** Live = wired provider; soon = designed but not configured yet. */
+  status: "live" | "soon";
+};
+
+export function storefrontAuthChannels(): AuthChannelState[] {
+  const social = new Set(configuredSocialProviders());
+  const whatsapp = whatsappLoginEnabled();
+
+  return [
+    { key: "whatsapp", status: whatsapp ? "live" : "soon" },
+    { key: "facebook", status: social.has("facebook") ? "live" : "soon" },
+    { key: "instagram", status: "soon" },
+    { key: "tiktok", status: "soon" },
+    ...(social.has("google")
+      ? [{ key: "google" as const, status: "live" as const }]
+      : []),
+  ];
 }
