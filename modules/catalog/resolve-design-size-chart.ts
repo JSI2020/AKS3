@@ -210,11 +210,17 @@ async function resolveBlockForComponent(
     pieceSizeBlocks?: Record<string, string>;
     primaryCategoryKey: string;
   },
-): Promise<{ block: BlockMeta; fromDesign: boolean } | null> {
+): Promise<{
+  block: BlockMeta;
+  fromDesign: boolean;
+  /** A block that belongs to this one piece — every row in it is this piece's,
+   *  so rows must not be re-routed to another component by measurement key. */
+  dedicated: boolean;
+} | null> {
   const pieceId = input.pieceSizeBlocks?.[componentKey];
   if (pieceId) {
     const block = await loadActiveBlock(pieceId);
-    if (block) return { block, fromDesign: true };
+    if (block) return { block, fromDesign: true, dedicated: true };
   }
 
   if (
@@ -222,11 +228,12 @@ async function resolveBlockForComponent(
     input.sizeBlockId
   ) {
     const block = await loadActiveBlock(input.sizeBlockId);
-    if (block) return { block, fromDesign: !block.isDefault };
+    // The shared primary block can hold prefixed rows for several pieces.
+    if (block) return { block, fromDesign: !block.isDefault, dedicated: false };
   }
 
   const fallback = await loadDefaultBlockForCategory(componentKey);
-  if (fallback) return { block: fallback, fromDesign: false };
+  if (fallback) return { block: fallback, fromDesign: false, dedicated: true };
   return null;
 }
 
@@ -258,7 +265,7 @@ async function loadComponentSection(
   });
   if (!resolved) return null;
 
-  let { block, fromDesign } = resolved;
+  let { block, fromDesign, dedicated } = resolved;
   let rows = await loadBlockRows(block.id);
 
   if (rows.length === 0) {
@@ -266,6 +273,7 @@ async function loadComponentSection(
     if (fallback) {
       block = fallback;
       fromDesign = false;
+      dedicated = true; // a category default belongs wholly to this piece
       rows = await loadBlockRows(fallback.id);
     }
   }
@@ -300,12 +308,16 @@ async function loadComponentSection(
   const rawRows: SizeChartRowPublic[] = [];
 
   for (const row of rows) {
-    const rowComponent = resolveRowComponent(
-      row.measurementKey,
-      componentKeys,
-      primaryCategoryKey,
-    );
-    if (rowComponent !== componentKey) continue;
+    // A dedicated per-piece block: every row is this piece's. Only split by
+    // measurement key when several pieces share one block.
+    if (!dedicated) {
+      const rowComponent = resolveRowComponent(
+        row.measurementKey,
+        componentKeys,
+        primaryCategoryKey,
+      );
+      if (rowComponent !== componentKey) continue;
+    }
 
     const bareKey = resolveBareKey(row.measurementKey, componentKeys);
     const def = MEASUREMENT_DEF_BY_KEY.get(bareKey);

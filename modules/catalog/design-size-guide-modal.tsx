@@ -4,6 +4,8 @@ import type { OverlayPlacements } from "@/modules/sizing/garment-size-guide";
 import { useEffect, useId, useRef } from "react";
 import { createPortal } from "react-dom";
 
+import { AksBrandLogo } from "@/modules/shop/shell/aks-brand-logo";
+
 import { DesignSizeGuideContent } from "./design-size-guide-content";
 import type { DesignSizeChartPublic } from "./resolve-design-size-chart";
 import "./size-guide.css";
@@ -75,14 +77,6 @@ export function DesignSizeGuideModal({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="aks-sg-head">
-          <div className="aks-sg-mark">
-            AKS<span className="dot">&#183;</span>ATELIER
-          </div>
-          <div className="aks-sg-eyebrow">Minimalist luxury &#183; East meets West</div>
-          <h2 id={titleId} className="aks-sg-title">
-            Size &amp; Fit Guide
-          </h2>
-          <p className="aks-sg-sub">{subtitle}</p>
           <button
             ref={closeRef}
             type="button"
@@ -92,6 +86,11 @@ export function DesignSizeGuideModal({
           >
             &#215;
           </button>
+          <AksBrandLogo variant="full" className="aks-sg-logo" />
+          <h2 id={titleId} className="aks-sg-title">
+            Size Guide
+          </h2>
+          <p className="aks-sg-sub">{subtitle}</p>
         </div>
 
         <div className="aks-sg-body">
@@ -104,10 +103,6 @@ export function DesignSizeGuideModal({
             onSelectSize={onSelectSize}
             showPieceNames
           />
-          <p className="aks-sg-note">
-            All measurements are of the finished garment, cut to standard sizes.
-            Between sizes? We cut M unless you tell us otherwise.
-          </p>
         </div>
       </div>
     </div>
