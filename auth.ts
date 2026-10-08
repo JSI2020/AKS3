@@ -1,4 +1,5 @@
 import NextAuth, { CredentialsSignin } from "next-auth";
+import type { Adapter } from "next-auth/adapters";
 import type { Provider } from "next-auth/providers";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import Credentials from "next-auth/providers/credentials";
@@ -13,6 +14,7 @@ import {
   users,
   verificationTokens,
 } from "@aks/db";
+import { uuidv7 } from "@aks/shared";
 
 import { authConfig } from "./auth.config";
 import { findOrCreateCustomer } from "@/modules/auth/customer-account";
@@ -52,10 +54,10 @@ class TwoFactorInvalid extends CredentialsSignin {
 /**
  * OAuth providers are added only when their credentials exist, so an unset
  * environment simply has no Google/Facebook button rather than a broken one.
- * New sign-ins land as CUSTOMER (the users.role default); Auth.js will not link
- * an OAuth login to an existing email that has no matching account row
- * (OAuthAccountNotLinked), which keeps staff — who must use /admin/login and
- * its 2FA — from slipping in through the shop.
+ *
+ * Email linking is enabled so a returning shopper who first ordered/signed in
+ * by email can continue with Facebook/Google on the same address. Staff emails
+ * are refused in the signIn callback before linking — they must use /admin/login.
  */
 function oauthProviders(): Provider[] {
   const list: Provider[] = [];
@@ -64,6 +66,7 @@ function oauthProviders(): Provider[] {
       Google({
         clientId: process.env.AUTH_GOOGLE_ID,
         clientSecret: process.env.AUTH_GOOGLE_SECRET,
+        allowDangerousEmailAccountLinking: true,
       }),
     );
   }
@@ -72,22 +75,43 @@ function oauthProviders(): Provider[] {
       Facebook({
         clientId: process.env.AUTH_FACEBOOK_ID,
         clientSecret: process.env.AUTH_FACEBOOK_SECRET,
+        allowDangerousEmailAccountLinking: true,
       }),
     );
   }
   return list;
 }
 
-export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
-  ...authConfig,
-  // Credentials + JWT: adapter is available for account/user lookups; sessions are
-  // written by createAuthSession (revocable rows with device/IP/lastSeenAt).
-  adapter: DrizzleAdapter(db, {
+/**
+ * Auth.js Drizzle adapter omits primary keys on insert. Our tables require
+ * application UUIDv7 ids (no DB default), so wrap create/link.
+ */
+function aksAuthAdapter(): Adapter {
+  const base = DrizzleAdapter(db, {
     usersTable: users as never,
     accountsTable: accounts as never,
     sessionsTable: sessions as never,
     verificationTokensTable: verificationTokens as never,
-  }),
+  });
+  return {
+    ...base,
+    async createUser(data) {
+      return base.createUser!({ ...data, id: uuidv7() });
+    },
+    async linkAccount(account) {
+      return base.linkAccount!({
+        ...account,
+        id: uuidv7(),
+      } as Parameters<NonNullable<Adapter["linkAccount"]>>[0]);
+    },
+  };
+}
+
+export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
+  ...authConfig,
+  // Credentials + JWT: adapter is available for account/user lookups; sessions are
+  // written by createAuthSession (revocable rows with device/IP/lastSeenAt).
+  adapter: aksAuthAdapter(),
   providers: [
     Credentials({
       id: "otp",
@@ -511,15 +535,35 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
   callbacks: {
     ...authConfig.callbacks,
     async signIn({ user, account, profile }) {
-      // Defense in depth: never let an OAuth login resolve to a staff account,
-      // even if email-linking were ever enabled. New customers have no role yet
-      // at this point and pass through.
+      // Storefront OAuth only. Runs before account link/create so we can refuse
+      // staff emails before allowDangerousEmailAccountLinking attaches a provider.
       if (
         account &&
         account.provider !== "otp" &&
         account.provider !== "customer-otp" &&
         account.provider !== "customer-whatsapp"
       ) {
+        const email = user.email ? normalizeEmail(user.email) : null;
+        if (email) {
+          const [existing] = await db
+            .select({
+              role: users.role,
+              status: users.status,
+              deletedAt: users.deletedAt,
+            })
+            .from(users)
+            .where(eq(users.email, email))
+            .limit(1);
+          if (existing) {
+            if (existing.deletedAt || existing.status === "DISABLED") {
+              return false;
+            }
+            if (existing.role !== "CUSTOMER") {
+              return false;
+            }
+          }
+        }
+
         const role = (user as { role?: string }).role;
         if (role && role !== "CUSTOMER") return false;
 
@@ -529,6 +573,9 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
           provider: account.provider,
         });
         if (!resolved.ok) return false;
+
+        user.id = resolved.user.id;
+        (user as { role?: string }).role = resolved.user.role;
       }
       return true;
     },

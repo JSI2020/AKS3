@@ -32,10 +32,16 @@ export function WhatsappLoginForm({ redirectTo }: { redirectTo: string }) {
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
         message?: string;
+        detail?: string;
         devCode?: string;
       };
       if (!res.ok) {
-        setError(data.error ?? t("errorSendCode"));
+        const detail = data.detail?.trim();
+        setError(
+          detail && process.env.NODE_ENV !== "production"
+            ? `${data.error ?? t("errorSendCode")} (${detail})`
+            : (data.error ?? t("errorSendCode")),
+        );
         return;
       }
       setMessage(

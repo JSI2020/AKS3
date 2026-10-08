@@ -69,6 +69,11 @@ export async function sendWhatsappTemplate(input: {
   languageCode?: string;
   /** Body {{1}}, {{2}}… parameter values in order. */
   bodyParameters: string[];
+  /**
+   * Auth copy-code templates need the OTP on the button as well as the body.
+   * When set, adds a `button` / `url` component at index 0 with this value.
+   */
+  buttonParameter?: string;
 }): Promise<{ id: string }> {
   const token = process.env.WHATSAPP_ACCESS_TOKEN?.trim();
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID?.trim();
@@ -77,18 +82,24 @@ export async function sendWhatsappTemplate(input: {
     throw new Error("WhatsApp is not configured");
   }
 
-  const components =
-    input.bodyParameters.length > 0
-      ? [
-          {
-            type: "body",
-            parameters: input.bodyParameters.map((text) => ({
-              type: "text",
-              text,
-            })),
-          },
-        ]
-      : undefined;
+  const components: Array<Record<string, unknown>> = [];
+  if (input.bodyParameters.length > 0) {
+    components.push({
+      type: "body",
+      parameters: input.bodyParameters.map((text) => ({
+        type: "text",
+        text,
+      })),
+    });
+  }
+  if (input.buttonParameter) {
+    components.push({
+      type: "button",
+      sub_type: "url",
+      index: "0",
+      parameters: [{ type: "text", text: input.buttonParameter }],
+    });
+  }
 
   const res = await fetch(
     `https://graph.facebook.com/${version}/${phoneNumberId}/messages`,
@@ -106,7 +117,7 @@ export async function sendWhatsappTemplate(input: {
         template: {
           name: input.templateName,
           language: { code: input.languageCode ?? "en" },
-          ...(components ? { components } : {}),
+          ...(components.length > 0 ? { components } : {}),
         },
       }),
     },
@@ -124,4 +135,28 @@ export async function sendWhatsappTemplate(input: {
   }
 
   return { id: json.messages?.[0]?.id ?? "sent" };
+}
+
+/**
+ * Cold sign-in OTP via an approved WhatsApp authentication (copy-code) template.
+ * Env: WHATSAPP_TEMPLATE_AUTH (name) + optional WHATSAPP_TEMPLATE_AUTH_LANG (default en_US).
+ */
+export async function sendWhatsappAuthOtp(input: {
+  to: string;
+  code: string;
+}): Promise<{ id: string }> {
+  const templateName = process.env.WHATSAPP_TEMPLATE_AUTH?.trim();
+  if (!templateName) {
+    throw new Error("WHATSAPP_TEMPLATE_AUTH is not configured");
+  }
+  const languageCode =
+    process.env.WHATSAPP_TEMPLATE_AUTH_LANG?.trim() || "en_US";
+
+  return sendWhatsappTemplate({
+    to: input.to,
+    templateName,
+    languageCode,
+    bodyParameters: [input.code],
+    buttonParameter: input.code,
+  });
 }

@@ -53,8 +53,11 @@ export const authConfig = {
     }),
   ],
   pages: {
+    // Staff OTP still uses /admin/login. OAuth/shop errors go through
+    // /auth/error which routes shoppers to /account/login and staff errors
+    // back to admin.
     signIn: "/admin/login",
-    error: "/admin/login",
+    error: "/auth/error",
   },
   session: {
     strategy: "jwt",

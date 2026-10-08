@@ -1,0 +1,117 @@
+# AKS production — Hetzner VPS + Caddy (see docs in HETZNER path / deploy notes)
+# Usage on server:
+#   cp .env.production.example .env   # then edit secrets
+#   docker compose -f docker-compose.prod.yml up -d --build
+
+name: aks
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aks}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-aks}
+    volumes:
+      - aks_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-aks} -d ${POSTGRES_DB:-aks}",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    mem_limit: 384m
+    command:
+      - postgres
+      - -c
+      - shared_buffers=64MB
+      - -c
+      - effective_cache_size=128MB
+      - -c
+      - max_connections=40
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aks}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-aks}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["migrate"]
+    restart: "no"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aks}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-aks}
+      AUTH_URL: ${AUTH_URL:-https://www.aks-atelier.com}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://www.aks-atelier.com}
+      NODE_ENV: production
+      AKS_ALLOW_DEV_OTP: "0"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    expose:
+      - "3000"
+    command: ["app"]
+    mem_limit: 768m
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 45s
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-aks}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-aks}
+      NODE_ENV: production
+      OUTBOX_POLL_MS: "500"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    command: ["worker"]
+    mem_limit: 256m
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+    mem_limit: 64m
+
+volumes:
+  aks_pg_data:
+  caddy_data:
+  caddy_config:

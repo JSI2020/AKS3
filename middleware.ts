@@ -69,6 +69,7 @@ export default auth((req) => {
     launchGated() &&
     !pathname.startsWith("/admin") &&
     !pathname.startsWith("/api") &&
+    !pathname.startsWith("/auth") &&
     pathname !== "/coming-soon"
   ) {
     const url = req.nextUrl.clone();
@@ -82,7 +83,11 @@ export default auth((req) => {
     );
   }
 
-  if (pathname.startsWith("/admin") || pathname.startsWith("/api")) {
+  if (
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/auth")
+  ) {
     return stampAnonCookie(NextResponse.next({
       request: { headers: reqWithAnon.headers },
     }), req, anonId);

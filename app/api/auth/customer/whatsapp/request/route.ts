@@ -99,9 +99,14 @@ export async function POST(request: Request) {
       message: "If we can reach that number, a code is on its way.",
       ...(issued.devCode ? { devCode: issued.devCode } : {}),
     });
-  } catch {
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("[whatsapp] OTP send failed:", detail);
     return NextResponse.json(
-      { error: "Could not send a WhatsApp code right now." },
+      {
+        error: "Could not send a WhatsApp code right now.",
+        ...(process.env.NODE_ENV !== "production" ? { detail } : {}),
+      },
       { status: 502 },
     );
   }

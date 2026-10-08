@@ -1,0 +1,4 @@
+aks-atelier.com, www.aks-atelier.com {
+	encode gzip
+	reverse_proxy app:3000
+}

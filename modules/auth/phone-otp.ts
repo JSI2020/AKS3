@@ -4,7 +4,10 @@ import { and, eq, gt } from "drizzle-orm";
 
 import { db, verificationTokens } from "@aks/db";
 import { toWhatsappMsisdn } from "@/modules/customers/phone";
-import { sendWhatsappText } from "@/modules/messaging/providers/whatsapp";
+import {
+  sendWhatsappAuthOtp,
+  sendWhatsappText,
+} from "@/modules/messaging/providers/whatsapp";
 
 import { generateOtpCode, hashOtp, OTP_TTL_MS } from "./otp";
 
@@ -13,14 +16,33 @@ import { generateOtpCode, hashOtp, OTP_TTL_MS } from "./otp";
  * verificationTokens table as email codes but under a "wa:" identifier so the
  * two namespaces never collide.
  *
- * Production note: the Cloud API only allows a business-initiated text inside a
- * 24-hour customer-service window. For a cold sign-in code you generally need an
- * approved WhatsApp *authentication* template; sendWhatsappText here covers dev
- * and in-window sends. Swap to sendWhatsappTemplate once a template is approved.
+ * Delivery:
+ * - AKS_ALLOW_DEV_OTP=1 (and not production) → return code in API, no send
+ * - WHATSAPP_TEMPLATE_AUTH set → authentication template (cold OTP)
+ * - else → free-form text (only works inside Meta's 24h customer window)
  */
 
 function identifierFor(phone: string): string {
   return `wa:${toWhatsappMsisdn(phone)}`;
+}
+
+function allowDevOtpSurface(): boolean {
+  return (
+    process.env.NODE_ENV !== "production" &&
+    process.env.AKS_ALLOW_DEV_OTP !== "0"
+  );
+}
+
+async function deliverPhoneOtp(msisdn: string, code: string): Promise<void> {
+  if (process.env.WHATSAPP_TEMPLATE_AUTH?.trim()) {
+    await sendWhatsappAuthOtp({ to: msisdn, code });
+    return;
+  }
+
+  await sendWhatsappText({
+    to: msisdn,
+    body: `Your AKS sign-in code is ${code}. It expires in 10 minutes. If you didn't ask for it, ignore this message.`,
+  });
 }
 
 export async function issuePhoneOtp(params: {
@@ -43,29 +65,17 @@ export async function issuePhoneOtp(params: {
     });
   });
 
-  // Delivery is outside the DB transaction so a WhatsApp outage cannot roll back
-  // a stored code — but in dev we skip the send entirely and surface the code
-  // only when AKS_ALLOW_DEV_OTP=1 (never when NODE_ENV=production).
-  const allowDevOtp =
-    process.env.NODE_ENV !== "production" &&
-    process.env.AKS_ALLOW_DEV_OTP !== "0";
-
-  if (allowDevOtp) {
+  if (allowDevOtpSurface()) {
     console.log(`\n[dev] WhatsApp sign-in code for ${msisdn}: ${code}\n`);
     return { expiresAt, devCode: code };
   }
 
-  if (process.env.NODE_ENV !== "production") {
-    console.log(
-      `\n[dev] WhatsApp OTP issued for ${msisdn} (AKS_ALLOW_DEV_OTP=0 — code not printed)\n`,
-    );
-    return { expiresAt };
-  }
+  // Delivery outside the DB transaction — outage must not roll back a stored code.
+  await deliverPhoneOtp(msisdn, code);
 
-  await sendWhatsappText({
-    to: msisdn,
-    body: `Your AKS sign-in code is ${code}. It expires in 24 hours. If you didn't ask for it, ignore this message.`,
-  });
+  if (process.env.NODE_ENV !== "production") {
+    console.log(`\n[whatsapp] OTP sent to ${msisdn}\n`);
+  }
 
   return { expiresAt };
 }

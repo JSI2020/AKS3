@@ -25,6 +25,8 @@ type Props = {
   redirectTo: string;
   /** Channel buttons: live ones sign in; soon ones stay visible but disabled. */
   channels: AuthChannelState[];
+  /** Prefill from Auth.js redirect (?error=…) — shop OAuth failures. */
+  initialError?: string | null;
 };
 
 const CHANNEL_ICON: Record<AuthChannelKey, ReactNode> = {
@@ -35,7 +37,11 @@ const CHANNEL_ICON: Record<AuthChannelKey, ReactNode> = {
   google: <GoogleChannelIcon className="auth-channel-icon" />,
 };
 
-export function CustomerLoginForm({ redirectTo, channels }: Props) {
+export function CustomerLoginForm({
+  redirectTo,
+  channels,
+  initialError = null,
+}: Props) {
   const t = useTranslations("AccountLogin");
   const router = useRouter();
   const [step, setStep] = useState<Step>("email");
@@ -44,7 +50,7 @@ export function CustomerLoginForm({ redirectTo, channels }: Props) {
   const [name, setName] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [marketing, setMarketing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -315,23 +321,13 @@ export function CustomerLoginForm({ redirectTo, channels }: Props) {
         ) : null}
       </form>
 
-      {step === "email" ? (
-        <>
-          {emailLeads && soonChannels.length > 0 ? (
-            <div className="auth-divider" role="separator">
-              <span>{t("orChannels")}</span>
-            </div>
-          ) : null}
-          {emailLeads ? renderChannels(soonChannels) : null}
-          {!emailLeads && soonChannels.length > 0 ? (
-            <>
-              <div className="auth-divider" role="separator">
-                <span>{t("alsoSoon")}</span>
-              </div>
-              {renderChannels(soonChannels)}
-            </>
-          ) : null}
-        </>
+      {step === "email" && soonChannels.length > 0 ? (
+        <details className="auth-soon-details">
+          <summary>
+            {emailLeads ? t("orChannels") : t("alsoSoon")}
+          </summary>
+          {renderChannels(soonChannels)}
+        </details>
       ) : null}
 
       {step !== "profile" ? (
