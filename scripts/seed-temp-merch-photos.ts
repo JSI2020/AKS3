@@ -1,6 +1,11 @@
 /**
- * Temporary merchandising photos for soft-launch QA.
- * Uses free Unsplash fashion stills (replace later via Admin → Design Photos / Homepage).
+ * AKS-true merch photos for soft-launch QA.
+ *
+ * Product cards: modest East–West boutique apparel (Eastern silhouette,
+ * quiet Western line) — NOT runway / loud fashion Unsplash.
+ * Homepage: White Collection only — milk · ivory · bone · cream cloth.
+ *
+ * Replace later via Admin → Design Photos / Homepage with real AKS shoots.
  *
  * Run: npx tsx scripts/seed-temp-merch-photos.ts
  */
@@ -11,87 +16,60 @@ config({ path: ".env" });
 
 import sharp from "sharp";
 
+import {
+  downloadDesignPhoto,
+  fetchBoutiquePhotoCatalog,
+  photoTripletForDesign,
+  type DesignPhotoCatalog,
+} from "./demo-design-photo-sources";
+import type { CatalogueLook } from "../packages/db/house-catalogue-looks";
+
 type Shot = { url: string; credit: string; label: string };
 
+function u(id: string): string {
+  return `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1400&q=85`;
+}
+
 /**
- * Quiet western-leaning pret stills — covered linen shirts, soft dresses, rails.
- * Milk–ivory–bone. Unsplash License. Illustrative only — not AKS garments.
- * IDs verified in prior soft-launch QA. First shot = homepage hero.
+ * White Collection homepage only — milk / ivory / bone / cream.
+ * No bright coats, no runway stare, no shopping-bag fashion.
  */
-const TEMP_SHOTS: Shot[] = [
-  {
-    url: "https://images.unsplash.com/photo-1745313452052-0e4e341f326c?auto=format&fit=crop&w=1200&q=80",
-    credit: "Unsplash",
-    label: "White set, studio calm",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1713881587420-113c1c43e28a?auto=format&fit=crop&w=1200&q=80",
-    credit: "Unsplash",
-    label: "Ivory linen mandarin tunic",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1752825609278-f9696bc9d7bd?auto=format&fit=crop&w=1200&q=80",
-    credit: "Unsplash",
-    label: "Bone linen shirt, western drape",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1713881676551-b16f22ce4719?auto=format&fit=crop&w=1200&q=80",
-    credit: "Unsplash",
-    label: "Bone linen blouson",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=80",
-    credit: "Unsplash",
-    label: "Cream hangers editorial",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1596783074918-c84cb06531ca?auto=format&fit=crop&w=1200&q=80",
-    credit: "Unsplash",
-    label: "Soft maxi length drape",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1585487000160-6ebcfceb0d03?auto=format&fit=crop&w=1200&q=80",
-    credit: "Unsplash",
-    label: "Modest mandarin dress",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1596433904747-e8b061219a71?auto=format&fit=crop&w=1200&q=80",
-    credit: "Unsplash",
-    label: "Folded linen neutrals",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1637110276019-df15ad496674?auto=format&fit=crop&w=1200&q=80",
-    credit: "Unsplash",
-    label: "Hand gathering linen cloth",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1545042746-ec9e5a59b359?auto=format&fit=crop&w=1200&q=80",
-    credit: "Unsplash",
-    label: "Linen textile stack",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1485968579580-b6d095142e6e?auto=format&fit=crop&w=1200&q=80",
-    credit: "Unsplash",
-    label: "White shirt, everyday western line",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1434389677669-e08b4cac3105?auto=format&fit=crop&w=1200&q=80",
-    credit: "Unsplash",
-    label: "Ivory knit blouse, quiet cloth",
-  },
+const WHITE_COLLECTION_SHOTS: Shot[] = [
+  { url: u("photo-1713881587420-113c1c43e28a"), credit: "Unsplash", label: "Ivory linen mandarin tunic" },
+  { url: u("photo-1752825609278-f9696bc9d7bd"), credit: "Unsplash", label: "Bone linen shirt drape" },
+  { url: u("photo-1713881676551-b16f22ce4719"), credit: "Unsplash", label: "Bone linen blouson" },
+  { url: u("photo-1585487000160-6ebcfceb0d03"), credit: "Unsplash", label: "Modest cream mandarin dress" },
+  { url: u("photo-1610030469983-98e550d6193c"), credit: "Unsplash", label: "Ivory dress, quiet doorway" },
+  { url: u("photo-1566174053879-31528523f8ae"), credit: "Unsplash", label: "Cream dress, soft architecture" },
+  { url: u("photo-1621184455862-c163dfb30e0f"), credit: "Unsplash", label: "White dress, wind and cloth" },
+  { url: u("photo-1596783074918-c84cb06531ca"), credit: "Unsplash", label: "Soft maxi, covered line" },
+  { url: u("photo-1490481651871-ab68de25d43d"), credit: "Unsplash", label: "Cream hangers, atelier calm" },
+  { url: u("photo-1637110276019-df15ad496674"), credit: "Unsplash", label: "Hand gathering linen" },
+  { url: u("photo-1545042746-ec9e5a59b359"), credit: "Unsplash", label: "Linen textile stack" },
+  { url: u("photo-1558171813-4c088753af8f"), credit: "Unsplash", label: "Sewing table, quiet cloth" },
 ];
 
-async function downloadJpeg(url: string): Promise<Buffer> {
-  const res = await fetch(url, {
-    headers: { "User-Agent": "AKS-temp-merch-seed/1.0" },
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status} ${url.slice(0, 60)}`);
-  const raw = Buffer.from(await res.arrayBuffer());
+async function toJpeg(raw: Buffer): Promise<Buffer> {
   return sharp(raw)
     .rotate()
     .resize(1200, 1600, { fit: "cover", position: "centre" })
-    .jpeg({ quality: 88, mozjpeg: true })
+    .jpeg({ quality: 90, mozjpeg: true })
     .toBuffer();
+}
+
+function categoryFromComponents(
+  components: string[] | null,
+): CatalogueLook["category"] {
+  const key = (components?.[0] ?? "KAMEEZ").toUpperCase();
+  if (
+    key === "TROUSER" ||
+    key === "DUPATTA" ||
+    key === "GOWN" ||
+    key === "SKIRT"
+  ) {
+    return key;
+  }
+  return "KAMEEZ";
 }
 
 async function main() {
@@ -108,16 +86,16 @@ async function main() {
     users,
   } = await import("@aks/db");
   const { uuidv7 } = await import("@aks/shared");
-  const { completeUpload, uploadBufferToR2 } = await import(
+  const { completeUpload, saveLocalDevAsset, uploadBufferToR2 } = await import(
     "@/modules/platform/assets/r2"
   );
   const { seedContentDefaults } = await import(
     "@/modules/content/seed-defaults"
   );
 
-  console.log("\n=== Seed temporary merch photos (Unsplash stand-ins) ===\n");
+  console.log("\n=== Seed AKS-true merch photos ===\n");
   console.log(
-    "These are not AKS garments. Replace via Admin → Designs → Photos / Homepage.\n",
+    "Product: modest East–West boutique apparel · Homepage: White Collection neutrals.\n",
   );
 
   const [owner] = await db
@@ -130,38 +108,10 @@ async function main() {
   console.log("Ensuring homepage CMS rows…");
   await seedContentDefaults();
 
-  console.log("Downloading temp shots…");
-  const buffers: { shot: Shot; jpeg: Buffer; assetId: string }[] = [];
-  for (const shot of TEMP_SHOTS) {
-    try {
-      const jpeg = await downloadJpeg(shot.url);
-      const { key } = await uploadBufferToR2({
-        body: jpeg,
-        mime: "image/jpeg",
-        keyPrefix: "temp-merch/unsplash",
-      });
-      // Always mirror under public/ so local /api/assets/serve works even if
-      // MinIO signed URLs are awkward across ports.
-      const { saveLocalDevAsset } = await import("@/modules/platform/assets/r2");
-      try {
-        saveLocalDevAsset(key, jpeg);
-      } catch {
-        // production-like env — MinIO/R2 only
-      }
-      const asset = await completeUpload({
-        key,
-        mime: "image/jpeg",
-        uploadedById: owner.id,
-        kind: "IMAGE",
-      });
-      buffers.push({ shot, jpeg, assetId: asset.id });
-      console.log(`  ✓ ${shot.label} (${shot.credit}) → ${asset.id}`);
-    } catch (e) {
-      console.warn(`  ✗ skip ${shot.label}:`, e instanceof Error ? e.message : e);
-    }
-  }
-  if (buffers.length < 3) {
-    throw new Error("Too few images downloaded — check network / Unsplash");
+  console.log("Fetching modest East–West boutique catalogues…");
+  const catalog: DesignPhotoCatalog = await fetchBoutiquePhotoCatalog();
+  for (const [cat, pool] of catalog.entries()) {
+    console.log(`  ${cat}: ${pool.length}`);
   }
 
   const published = await db
@@ -169,17 +119,21 @@ async function main() {
       id: designs.id,
       slug: designs.slug,
       name: designs.name,
+      components: designs.components,
     })
     .from(designs)
     .where(eq(designs.status, "PUBLISHED"))
     .orderBy(asc(designs.name));
 
-  console.log(`\nAttaching photos to ${published.length} published design(s)…`);
+  console.log(
+    `\nAttaching boutique triplets to ${published.length} published design(s)…`,
+  );
+
   let updated = 0;
   for (const [i, d] of published.entries()) {
-    const a = buffers[i % buffers.length]!;
-    const b = buffers[(i + 1) % buffers.length]!;
-    const c = buffers[(i + 2) % buffers.length]!;
+    const category = categoryFromComponents(d.components);
+    const triplet = photoTripletForDesign(i, category, catalog);
+    const angles = ["FRONT", "THREE_QUARTER", "BACK"] as const;
 
     const cws = await db
       .select({
@@ -191,59 +145,117 @@ async function main() {
       .where(and(eq(colourways.designId, d.id), eq(colourways.active, true)))
       .orderBy(asc(colourways.sortOrder));
     if (!cws.length) continue;
-    const defaultCw = cws.find((x) => x.isDefault) ?? cws[0]!;
-    const altCw = cws.find((x) => x.id !== defaultCw.id) ?? defaultCw;
+
+    const defaultCw = cws.find((c) => c.isDefault) ?? cws[0]!;
+    const altCw = cws.find((c) => c.id !== defaultCw.id) ?? defaultCw;
+
+    const assetIds: string[] = [];
+    for (const url of triplet.urls) {
+      try {
+        const jpeg = await toJpeg(await downloadDesignPhoto(url));
+        const { key } = await uploadBufferToR2({
+          body: jpeg,
+          mime: "image/jpeg",
+          keyPrefix: "temp-merch/east-west",
+        });
+        try {
+          saveLocalDevAsset(key, jpeg);
+        } catch {
+          // R2-only envs
+        }
+        const asset = await completeUpload({
+          key,
+          mime: "image/jpeg",
+          uploadedById: owner.id,
+          kind: "IMAGE",
+        });
+        assetIds.push(asset.id);
+      } catch (e) {
+        console.warn(
+          `  skip angle for ${d.slug}:`,
+          e instanceof Error ? e.message : e,
+        );
+      }
+    }
+    if (assetIds.length < 3) {
+      console.warn(`  ✗ ${d.slug} — need 3 angles, got ${assetIds.length}`);
+      continue;
+    }
 
     await db.delete(designRenders).where(eq(designRenders.designId, d.id));
     await db.insert(designRenders).values([
-      {
+      ...angles.map((angle, idx) => ({
         id: uuidv7(),
         designId: d.id,
         colourwayId: defaultCw.id,
-        angle: "FRONT",
+        angle,
         archetypeId: null,
-        assetId: a.assetId,
+        assetId: assetIds[idx]!,
         isAiGenerated: false,
-        altText: `${d.name} — temporary front (${a.shot.label})`,
-        sortOrder: 0,
-      },
-      {
-        id: uuidv7(),
-        designId: d.id,
-        colourwayId: defaultCw.id,
-        angle: "THREE_QUARTER",
-        archetypeId: null,
-        assetId: b.assetId,
-        isAiGenerated: false,
-        altText: `${d.name} — temporary three-quarter (${b.shot.label})`,
-        sortOrder: 1,
-      },
-      {
-        id: uuidv7(),
-        designId: d.id,
-        colourwayId: defaultCw.id,
-        angle: "BACK",
-        archetypeId: null,
-        assetId: c.assetId,
-        isAiGenerated: false,
-        altText: `${d.name} — temporary back (${c.shot.label})`,
-        sortOrder: 2,
-      },
+        altText: `${d.name} — ${angle.toLowerCase().replace(/_/g, " ")} (${triplet.productTitle})`,
+        sortOrder: idx,
+      })),
       {
         id: uuidv7(),
         designId: d.id,
         colourwayId: altCw.id,
-        angle: "FRONT",
+        angle: "FRONT" as const,
         archetypeId: null,
-        assetId: b.assetId,
+        assetId: assetIds[1]!,
         isAiGenerated: false,
-        altText: `${d.name} alt colourway — temporary front`,
+        altText: `${d.name} alt shade — front`,
         sortOrder: 3,
       },
     ]);
+
     updated += 1;
+    if (updated <= 6 || updated === published.length) {
+      console.log(
+        `  ✓ ${d.name} ← ${triplet.productTitle.slice(0, 42)} (${triplet.credit})`,
+      );
+    } else if (updated === 7) {
+      console.log("  …");
+    }
   }
   console.log(`  Updated ${updated} design(s).`);
+
+  console.log("\nWiring White Collection homepage hero + door tiles…");
+  const whiteAssets: string[] = [];
+  for (const shot of WHITE_COLLECTION_SHOTS) {
+    try {
+      const res = await fetch(shot.url, {
+        headers: { "User-Agent": "AKS-white-collection-seed/1.0" },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const jpeg = await toJpeg(Buffer.from(await res.arrayBuffer()));
+      const { key } = await uploadBufferToR2({
+        body: jpeg,
+        mime: "image/jpeg",
+        keyPrefix: "temp-merch/white-collection",
+      });
+      try {
+        saveLocalDevAsset(key, jpeg);
+      } catch {
+        // ignore
+      }
+      const asset = await completeUpload({
+        key,
+        mime: "image/jpeg",
+        uploadedById: owner.id,
+        kind: "IMAGE",
+      });
+      whiteAssets.push(asset.id);
+      console.log(`  ✓ ${shot.label}`);
+    } catch (e) {
+      console.warn(
+        `  ✗ skip ${shot.label}:`,
+        e instanceof Error ? e.message : e,
+      );
+    }
+  }
+  if (whiteAssets.length < 4) {
+    throw new Error("Too few White Collection shots for homepage");
+  }
 
   const publishedHomes = await db
     .select()
@@ -255,12 +267,13 @@ async function main() {
     .where(eq(homepages.status, "DRAFT"));
   const homes = [...publishedHomes, ...draftHomes];
 
-  const heroAsset = buffers[0]!.assetId;
+  const heroAsset = whiteAssets[0]!;
+  const lookbookAsset = whiteAssets[1]!;
   const doorAssets = [
-    buffers[1]!.assetId,
-    buffers[2]!.assetId,
-    buffers[3 % buffers.length]!.assetId,
-    buffers[4 % buffers.length]!.assetId,
+    whiteAssets[2]!,
+    whiteAssets[3]!,
+    whiteAssets[4 % whiteAssets.length]!,
+    whiteAssets[5 % whiteAssets.length]!,
   ];
 
   for (const home of homes) {
@@ -269,34 +282,53 @@ async function main() {
       .from(heroSlides)
       .where(eq(heroSlides.homepageId, home.id))
       .orderBy(asc(heroSlides.sortOrder));
-    for (const slide of slides) {
+
+    for (const [si, slide] of slides.entries()) {
       await db
         .update(heroSlides)
         .set({
-          desktopImageAssetId: heroAsset,
-          mobileImageAssetId: heroAsset,
+          desktopImageAssetId: si === 0 ? heroAsset : lookbookAsset,
+          mobileImageAssetId: si === 0 ? heroAsset : lookbookAsset,
           updatedAt: new Date(),
         })
         .where(eq(heroSlides.id, slide.id));
     }
+
     if (!slides.length) {
       const { hashLink } = await import("@/modules/content/types");
-      await db.insert(heroSlides).values({
-        id: uuidv7(),
-        homepageId: home.id,
-        sortOrder: 0,
-        eyebrow: "Quiet luxury · rooted in heritage",
-        headline: "Eastern lines, Western calm",
-        subtext:
-          "Ready-to-wear pieces in natural cloth — chosen for how they drape.",
-        buttonLabel: "See the collections",
-        buttonLink: hashLink("#cats"),
-        textPosition: "LEFT",
-        overlayStrength: 45,
-        desktopImageAssetId: heroAsset,
-        mobileImageAssetId: heroAsset,
-        active: true,
-      });
+      await db.insert(heroSlides).values([
+        {
+          id: uuidv7(),
+          homepageId: home.id,
+          sortOrder: 0,
+          eyebrow: "Quiet luxury · rooted in heritage",
+          headline: "The cut is the ornament.",
+          subtext:
+            "Eastern silhouette, Western restraint — in matte natural cloth.",
+          buttonLabel: "Enter the house",
+          buttonLink: hashLink("#cats"),
+          textPosition: "LEFT",
+          overlayStrength: 45,
+          desktopImageAssetId: heroAsset,
+          mobileImageAssetId: heroAsset,
+          active: true,
+        },
+        {
+          id: uuidv7(),
+          homepageId: home.id,
+          sortOrder: 1,
+          eyebrow: "Lookbook",
+          headline: "See how the cloth moves.",
+          subtext: "Cut, drape, and quiet finishes — nothing added to be seen.",
+          buttonLabel: "View the edit",
+          buttonLink: hashLink("#edit"),
+          textPosition: "LEFT",
+          overlayStrength: 40,
+          desktopImageAssetId: lookbookAsset,
+          mobileImageAssetId: lookbookAsset,
+          active: true,
+        },
+      ]);
     }
 
     const tiles = await db
@@ -314,17 +346,20 @@ async function main() {
         .where(eq(categoryTiles.id, tile.id));
     }
   }
+
   console.log(
-    `\nHomepage hero + category doors updated on ${homes.length} homepage row(s).`,
+    `\nHomepage White Collection wired on ${homes.length} homepage row(s).`,
   );
   console.log(
-    `\nDone. Browse /en — replace later in admin when real AKS photos arrive.\n`,
+    `\nDone — ${updated} design(s) with East–West boutique photos. Browse /\n`,
   );
 
   await sql.end({ timeout: 5 });
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+main()
+  .then(() => process.exit(0))
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });

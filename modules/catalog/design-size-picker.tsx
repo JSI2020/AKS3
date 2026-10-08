@@ -77,7 +77,13 @@ export function DesignSizePicker({
         })}
       </div>
 
-      <button type="button" className="size-guide-link" onClick={onOpenSizeGuide}>
+      {/* Size guide opens from the branded trigger below Add to bag —
+          keep this control as a quiet text link next to the size row. */}
+      <button
+        type="button"
+        className="size-guide-link"
+        onClick={() => onOpenSizeGuide()}
+      >
         Size &amp; fit guide
       </button>
     </div>

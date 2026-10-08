@@ -11,13 +11,13 @@ import { designDetailParsers } from "./design-detail-search-params";
 import { DesignGallery } from "./design-gallery";
 import { DesignSizeGuideModal } from "./design-size-guide-modal";
 import { DesignSizePicker } from "./design-size-picker";
+import "./size-guide.css";
 import { AddToCartButton } from "@/modules/cart/add-to-cart-button";
 import {
   resolveShadePriceMinor,
   resolveShadeCompareAtMinor,
   resolveShadeSizeLabels,
 } from "@/modules/designs/shade-utils";
-import { DesignSizingPanel } from "./design-sizing-panel";
 import { resolveDisplayPrice } from "./pricing";
 import type {
   ConfiguratorState,
@@ -259,17 +259,6 @@ export function DesignConfigurator({
           </p>
         ) : null}
 
-        <DesignSizeGuideModal
-          open={sizeGuideOpen}
-          onClose={() => setSizeGuideOpen(false)}
-          chart={sizeChart}
-          ghostUrl={design.sizingGhostUrl}
-          placements={design.sizingOverlay ?? undefined}
-          availableSizeLabels={shadeSizeLabels}
-          selectedSizeLabel={state.sizeLabel}
-          onSelectSize={handleSelectSizeFromGuide}
-        />
-
         <AddToCartButton
           design={design}
           colourwayId={state.colourwayId}
@@ -303,15 +292,16 @@ export function DesignConfigurator({
           ) : null}
         </div>
 
-        <DesignSizingPanel
+        <DesignSizeGuideModal
+          open={sizeGuideOpen}
+          onClose={() => setSizeGuideOpen(false)}
           chart={sizeChart}
           ghostUrl={design.sizingGhostUrl}
           placements={design.sizingOverlay ?? undefined}
           availableSizeLabels={shadeSizeLabels}
           selectedSizeLabel={state.sizeLabel}
-          onSelectSize={(sizeLabel) =>
-            patchState({ sizeMode: "STANDARD", sizeLabel })
-          }
+          onSelectSize={handleSelectSizeFromGuide}
+          designName={design.name}
         />
 
         {design.storyCopy ? (

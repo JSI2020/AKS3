@@ -626,8 +626,11 @@
   padding-block-start: 8.5rem;
 }
 
-.shop-proto .shop-main:has(> .hero),
-.shop-proto .shop-main:has(.hero) {
+/* Must beat `.shop-topchrome.has-ticker ~ .shop-main` (equal 0,3,0 otherwise
+   leaves 8.5rem top pad and pushes the CTA past the fold on phones). */
+.shop-proto .shop-main:has(.hero),
+.shop-proto .shop-topchrome.has-ticker ~ .shop-main:has(.hero),
+.shop-proto .shop-topchrome ~ .shop-main:has(.hero) {
   padding-block-start: 0;
 }
 
@@ -1036,11 +1039,11 @@
 /* Save/remove heart on product cards + PDP */
 .shop-proto .wish-heart {
   position: absolute;
-  top: 12px;
-  inset-inline-end: 12px;
+  top: 8px;
+  inset-inline-end: 8px;
   z-index: 3;
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   background: rgba(244, 238, 225, 0.86);
@@ -1057,8 +1060,8 @@
   background: var(--milk);
 }
 .shop-proto .wish-heart svg {
-  width: 17px;
-  height: 17px;
+  width: 18px;
+  height: 18px;
   fill: none;
   stroke: var(--ink);
   stroke-width: 1.5;
@@ -1734,11 +1737,12 @@
 }
 
 .shop-proto .cat .label .m {
-  font-size: 10.5px;
-  letter-spacing: 0.14em;
+  font-size: 11.5px;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(244, 238, 225, 0.88);
-  max-width: 14rem;
+  color: rgba(244, 238, 225, 0.92);
+  max-width: 16rem;
+  line-height: 1.35;
 }
 
 /* MIXED EDIT */
@@ -2552,6 +2556,8 @@
 
 .shop-proto .cart-drawer[data-open="false"] {
   transform: translateX(100%);
+  pointer-events: none;
+  visibility: hidden;
 }
 
 [dir="rtl"] .shop-proto .cart-drawer[data-open="false"] {
@@ -2759,8 +2765,8 @@
 }
 
 .shop-proto .colour {
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   cursor: pointer;
   position: relative;
@@ -2768,6 +2774,7 @@
   transition: transform 0.3s;
   padding: 0;
   overflow: hidden;
+  flex: none;
 }
 
 .shop-proto .colour:hover {
@@ -2840,14 +2847,16 @@
 
 .shop-proto .std button {
   flex: 1;
+  min-height: 44px;
   padding: 0.7rem 0;
   border: 1px solid var(--line);
   border-radius: var(--r);
   font-family: var(--font-shop-sans), sans-serif;
   font-size: 12px;
   letter-spacing: 0.08em;
-  transition: all 0.3s;
+  transition: border-color 0.3s, background 0.3s, color 0.3s;
   background: none;
+  cursor: pointer;
 }
 
 .shop-proto .std button:hover {
@@ -2873,9 +2882,12 @@
 }
 
 .shop-proto .size-guide-link {
+  position: relative;
+  z-index: 2;
   font-size: 11.5px;
   letter-spacing: 0.06em;
   color: var(--taupe);
+  border: none;
   border-bottom: 1px solid var(--taupe);
   margin-top: 0.5rem;
   display: inline-flex;
@@ -2883,10 +2895,11 @@
   min-height: 44px;
   padding-block: 0.65rem;
   padding-inline: 0;
-  transition: all 0.3s;
+  transition: color 0.3s, border-color 0.3s;
   background: none;
   border-radius: 0;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .shop-proto .size-guide-link:hover {
@@ -3342,12 +3355,17 @@
   }
 
   .shop-proto .hero {
+    /* Override desktop `height: min(92vh, …)`. Prefer a full first paint, but
+       allow the block to grow so the CTA is never clipped by overflow:hidden. */
+    height: auto;
+    min-height: 100svh;
+    max-height: none;
     justify-content: flex-end;
     align-items: stretch;
-    padding-block: 1.5rem 1.75rem;
-    /* Fill the screen below the ticker + sticky header so the CTA lands in
-       the first paint instead of below the fold. */
-    min-height: calc(100svh - 154px);
+    box-sizing: border-box;
+    padding-block:
+      calc(env(safe-area-inset-top, 0px) + 6.75rem)
+      calc(env(safe-area-inset-bottom, 0px) + 1.25rem);
   }
 
   /* Mobile keeps a strong bottom scrim so light copy reads over any photo —
@@ -3381,7 +3399,7 @@
   }
 
   .shop-proto .hero-cta {
-    margin-top: 1.3rem;
+    margin-top: 1.15rem;
   }
 
   .shop-proto .hero-copy {
@@ -3392,6 +3410,7 @@
   .shop-proto .hero-cta a {
     width: 100%;
     text-align: center;
+    padding: 0.85rem 1.5rem;
   }
 
   .shop-proto .cats-grid {
@@ -3400,6 +3419,22 @@
 
   .shop-proto .cat {
     aspect-ratio: 3 / 4;
+  }
+
+  .shop-proto .cat .label {
+    padding: 1.25rem 0.9rem;
+  }
+
+  .shop-proto .cat .label .cat-pill {
+    min-height: 2.55rem;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    padding: 0.55rem 1.15rem;
+  }
+
+  .shop-proto .cat .label .m {
+    font-size: 12px;
+    letter-spacing: 0.1em;
   }
 
   .shop-proto .cat:nth-child(2) {
@@ -3511,6 +3546,110 @@
     align-items: center;
     justify-content: center;
   }
+}
+
+/* Short phones (Android compact / SE) — keep CTA fully in first paint. */
+@media (max-width: 900px) and (max-height: 740px) {
+  .shop-proto .hero {
+    padding-block:
+      calc(env(safe-area-inset-top, 0px) + 6.4rem)
+      calc(env(safe-area-inset-bottom, 0px) + 1rem);
+  }
+
+  .shop-proto .hero-h {
+    font-size: clamp(2.05rem, 7.5vw, 2.55rem);
+    margin-top: 0.7rem;
+  }
+
+  .shop-proto .hero-sub {
+    font-size: 13px;
+    line-height: 1.45;
+    margin-top: 0.55rem;
+  }
+
+  .shop-proto .hero-cta {
+    margin-top: 0.85rem;
+  }
+
+  .shop-proto .hero-cta a {
+    padding: 0.75rem 1.25rem;
+  }
+
+  .shop-proto .hero-copy .eyebrow {
+    font-size: 11px;
+  }
+}
+
+/* Tablet band — doors + edit mosaic get a proper mid composition
+   between phone 2-col and desktop 4-col. Burger stays until 901px. */
+@media (min-width: 701px) and (max-width: 900px) {
+  .shop-proto .cats-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .shop-proto .cat {
+    aspect-ratio: 3 / 4.1;
+  }
+
+  .shop-proto .cat:nth-child(1),
+  .shop-proto .cat:nth-child(2) {
+    border-bottom: none;
+  }
+
+  .shop-proto .cat:nth-child(2) {
+    border-inline-end: 1px solid var(--line);
+  }
+
+  .shop-proto .grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.75rem 1.15rem;
+  }
+
+  .shop-proto .edit-mosaic-item.is-feature {
+    grid-column: span 2;
+    grid-row: span 2;
+  }
+
+  .shop-proto .edit-mosaic-item.is-feature .card .frame {
+    min-height: clamp(22rem, 48vh, 32rem);
+    aspect-ratio: auto;
+    flex: 1 1 auto;
+  }
+
+  .shop-proto .lookbook-stage {
+    min-height: min(68vh, 40rem);
+  }
+}
+
+/* Collapse Soon social channels so email stays the primary action. */
+.shop-proto .auth-soon-details {
+  border-top: 1px solid color-mix(in oklab, var(--ink) 10%, transparent);
+  padding-top: 0.25rem;
+}
+
+.shop-proto .auth-soon-details > summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--ink) 48%, transparent);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding-block: 0.55rem;
+}
+
+.shop-proto .auth-soon-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.shop-proto .auth-soon-details[open] > summary {
+  color: var(--ink);
+}
+
+.shop-proto .auth-soon-details .auth-channels {
+  padding-block-end: 0.35rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -46,6 +46,7 @@ async function main() {
     orderItems,
     orders,
     payments,
+    sql: pgSql,
     users,
   } = await import("@aks/db");
   const { uuidv7 } = await import("@aks/shared");
@@ -391,9 +392,12 @@ async function main() {
   }
 
   console.log("Portal seed complete.");
+  await pgSql.end({ timeout: 5 });
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+main()
+  .then(() => process.exit(0))
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });

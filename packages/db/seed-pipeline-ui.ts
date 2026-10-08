@@ -321,6 +321,7 @@ async function main() {
     orderItems,
     orderPayments,
     orders,
+    sql,
     users,
   } = await import("@aks/db");
   const { uuidv7 } = await import("@aks/shared");
@@ -658,9 +659,12 @@ async function main() {
   }
 
   console.log("Done. Open /admin/fabrics and /admin/orders");
+  await sql.end({ timeout: 5 });
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+main()
+  .then(() => process.exit(0))
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });

@@ -1,7 +1,7 @@
 "use client";
 
 import type { OverlayPlacements } from "@/modules/sizing/garment-size-guide";
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { AksBrandLogo } from "@/modules/shop/shell/aks-brand-logo";
@@ -36,10 +36,25 @@ export function DesignSizeGuideModal({
 }: Props) {
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
+  const [mounted, setMounted] = useState(false);
+  /** Ignore the same user gesture that opened the modal (scrim under cursor). */
+  const armedRef = useRef(false);
 
   useEffect(() => {
-    if (!open) return;
-    closeRef.current?.focus();
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!open) {
+      armedRef.current = false;
+      return;
+    }
+    armedRef.current = false;
+    const arm = window.setTimeout(() => {
+      armedRef.current = true;
+      closeRef.current?.focus();
+    }, 50);
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };
@@ -47,12 +62,13 @@ export function DesignSizeGuideModal({
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
+      window.clearTimeout(arm);
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = prevOverflow;
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!mounted || !open) return null;
 
   const pieceNames =
     chart?.components
@@ -63,11 +79,16 @@ export function DesignSizeGuideModal({
       ? pieceNames.join(" · ")
       : (designName ?? "Finished garment measurements");
 
-  const content = (
+  function handleScrimClick() {
+    if (!armedRef.current) return;
+    onClose();
+  }
+
+  return createPortal(
     <div
       className="shop-proto aks-sg-scrim"
       role="presentation"
-      onClick={onClose}
+      onClick={handleScrimClick}
     >
       <div
         role="dialog"
@@ -105,8 +126,7 @@ export function DesignSizeGuideModal({
           />
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
-
-  return createPortal(content, document.body);
 }

@@ -22,6 +22,7 @@ import {
   filterStorefrontChartRows,
   toGarmentChartRows,
 } from "./filter-storefront-chart-rows";
+import { filterStorefrontRtwSizeLabels } from "./types";
 
 export type SizeChartRowPublic = {
   measurementKey: string;
@@ -195,12 +196,19 @@ function filterSizeLabels(
   blockLabels: readonly string[],
   availableSizeLabels?: readonly string[],
 ): string[] {
-  if (!availableSizeLabels?.length) return [...blockLabels];
-  const allowed = new Set(availableSizeLabels);
-  const overlap = blockLabels.filter((label) => allowed.has(label));
-  // Dupatta/shawl blocks often use "One size" while a design may still list
-  // XS–XL from RTW defaults — empty overlap must not blank the storefront chart.
-  return overlap.length > 0 ? overlap : [...blockLabels];
+  let labels: string[];
+  if (!availableSizeLabels?.length) {
+    labels = [...blockLabels];
+  } else {
+    const allowed = new Set(availableSizeLabels);
+    const overlap = blockLabels.filter((label) => allowed.has(label));
+    // Dupatta/shawl blocks often use "One size" while a design may still list
+    // XS–XL from RTW defaults — empty overlap must not blank the storefront chart.
+    labels = overlap.length > 0 ? overlap : [...blockLabels];
+  }
+  // Preserve One size / non-alpha accessory labels; otherwise clamp to XS–XL.
+  if (labels.every((l) => /one\s*size/i.test(l))) return labels;
+  return filterStorefrontRtwSizeLabels(labels);
 }
 
 async function resolveBlockForComponent(

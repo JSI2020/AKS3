@@ -11,6 +11,9 @@ const UNPUBLISH_SLUG_PREFIXES = [
   "inv-design-",
 ] as const;
 
+/** Published QA names that must never lead Edit / lookbook. */
+const UNPUBLISH_NAME_PATTERN = /^test\s*\d+/i;
+
 /**
  * Cleans test-published junk and seeds demo RTW qty so the storefront can sell.
  * Run after `audit:launch-catalogue` reports blockers on fixture designs.
@@ -48,6 +51,22 @@ async function main() {
       .where(eq(designs.id, d.id));
     unpublished += 1;
     console.log(`unpublished fixture: ${d.slug}`);
+  }
+
+  const namedJunk = await db
+    .select({ id: designs.id, slug: designs.slug, name: designs.name })
+    .from(designs)
+    .where(eq(designs.status, "PUBLISHED"));
+
+  for (const d of namedJunk) {
+    if (!UNPUBLISH_NAME_PATTERN.test(d.name)) continue;
+    if (d.slug.startsWith("demo-")) continue;
+    await db
+      .update(designs)
+      .set({ status: "DRAFT", publishedAt: null, updatedAt: new Date() })
+      .where(eq(designs.id, d.id));
+    unpublished += 1;
+    console.log(`unpublished QA name: ${d.name} (${d.slug})`);
   }
 
   const published = await db

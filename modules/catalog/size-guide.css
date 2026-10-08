@@ -12,15 +12,32 @@
 .shop-proto.aks-sg-scrim {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  /* Above fixed shop chrome (z-index 50) and any sticky PDP rails. */
+  z-index: 2500;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: clamp(12px, 4vw, 32px);
+  padding-block-end: max(clamp(12px, 4vw, 32px), env(safe-area-inset-bottom, 0px));
   background: rgba(18, 20, 28, 0.58);
   -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
   animation: aks-sg-fade 0.28s ease both;
+}
+
+@media (max-width: 640px) {
+  .shop-proto.aks-sg-scrim {
+    align-items: flex-end;
+    padding: 0;
+    padding-block-end: 0;
+  }
+
+  .shop-proto .aks-sg-modal {
+    width: 100%;
+    max-height: min(92svh, 920px);
+    border-radius: 2px 2px 0 0;
+    border-bottom: 0;
+  }
 }
 
 @keyframes aks-sg-fade {
@@ -37,8 +54,8 @@
   overflow: hidden;
   background: var(--milk, #f4eee1);
   border: 1px solid var(--line, #e4ddcd);
-  border-radius: 3px;
-  box-shadow: 0 40px 100px -30px rgba(16, 18, 26, 0.7);
+  border-radius: 1px;
+  box-shadow: none;
   animation: aks-sg-rise 0.42s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -102,9 +119,9 @@
 .shop-proto .aks-sg-close {
   position: absolute;
   top: 14px;
-  right: 14px;
-  width: 30px;
-  height: 30px;
+  inset-inline-end: 14px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -198,22 +215,24 @@
 }
 
 /* ── Table ──────────────────────────────────────────────────────────────── */
-/* The piece wrapper inherits overflow-x:auto from globals; let the table
-   shrink to fit the narrower modal instead of forcing a scrollbar. */
-.shop-proto .aks-sg-body .aks-sg-piece {
+/* Horizontal scroll on narrow screens — never crush columns into overlap. */
+.shop-proto .aks-sg-body .aks-sg-piece,
+.shop-proto .aks-sg-body .size-guide-table-wrap {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 .shop-proto .aks-sg-body .size-guide-table {
-  width: 100%;
-  min-width: 0;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   font-size: 13px;
-  table-layout: fixed;
+  table-layout: auto;
 }
 
 .shop-proto .aks-sg-body .size-guide-table thead th {
-  padding: 10px 8px;
+  padding: 10px 12px;
   font-family: var(--font-shop-sans), sans-serif;
   font-size: 10px;
   font-weight: 400;
@@ -222,11 +241,12 @@
   color: var(--taupe, #8d7e66);
   text-align: center;
   border-bottom: 1px solid var(--ink, #22283a);
+  white-space: nowrap;
 }
 
 .shop-proto .aks-sg-body .size-guide-table thead th:first-child {
   text-align: start;
-  width: 42%;
+  min-width: 7.5rem;
 }
 
 .shop-proto .aks-sg-body .size-guide-table thead th.base-col {
@@ -235,19 +255,22 @@
 }
 
 .shop-proto .aks-sg-body .size-guide-table tbody th {
-  padding: 11px 8px;
+  padding: 11px 12px;
   font-weight: 400;
   text-align: start;
   color: var(--espresso, #4a3b2f);
+  white-space: nowrap;
 }
 
 .shop-proto .aks-sg-body .size-guide-table tbody td {
-  padding: 11px 8px;
+  padding: 11px 12px;
   text-align: center;
   font-family: var(--font-shop-data, var(--font-shop-sans)), monospace;
   font-variant-numeric: tabular-nums;
   color: var(--ink, #22283a);
   border-top: 1px solid color-mix(in oklab, var(--line) 65%, transparent);
+  white-space: nowrap;
+  min-width: 3rem;
 }
 
 /* Base (M) column: a quiet gold channel, not a heavy block. */
@@ -265,6 +288,30 @@
 
 .shop-proto .aks-sg-body .size-guide-table tbody tr:hover td.base {
   background: rgba(176, 141, 76, 0.14);
+}
+
+@media (max-width: 640px) {
+  .shop-proto .aks-sg-body {
+    padding: 16px 16px max(28px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .shop-proto .aks-sg-body .size-guide-table {
+    font-size: 12px;
+  }
+
+  .shop-proto .aks-sg-body .size-guide-table thead th:first-child,
+  .shop-proto .aks-sg-body .size-guide-table tbody th {
+    position: sticky;
+    inset-inline-start: 0;
+    z-index: 1;
+    background: var(--milk, #f4eee1);
+  }
+
+  .shop-proto .aks-sg-body .size-guide-table thead th,
+  .shop-proto .aks-sg-body .size-guide-table tbody td,
+  .shop-proto .aks-sg-body .size-guide-table tbody th {
+    padding: 10px 11px;
+  }
 }
 
 /* Visual overlay (ghost silhouette), when present. */

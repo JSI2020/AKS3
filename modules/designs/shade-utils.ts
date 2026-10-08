@@ -1,5 +1,7 @@
 import { STANDARD_SIZE_LABELS } from "@aks/shared";
 
+import { filterStorefrontRtwSizeLabels } from "@/modules/catalog/types";
+
 type ShadeRow = {
   id: string;
   name: string;
@@ -15,13 +17,15 @@ export function resolveShadeSizeLabels(
   shade: ShadeRow,
   design: DesignSizes,
 ): string[] {
+  let labels: string[];
   if (shade.availableSizeLabels?.length) {
-    return [...shade.availableSizeLabels];
+    labels = [...shade.availableSizeLabels];
+  } else if (design.availableSizeLabels?.length) {
+    labels = [...design.availableSizeLabels];
+  } else {
+    labels = [...STANDARD_SIZE_LABELS.filter((l) => l !== "XXL")];
   }
-  if (design.availableSizeLabels?.length) {
-    return [...design.availableSizeLabels];
-  }
-  return [...STANDARD_SIZE_LABELS.filter((l) => l !== "XXL")];
+  return filterStorefrontRtwSizeLabels(labels);
 }
 
 export function shadeDisplayName(

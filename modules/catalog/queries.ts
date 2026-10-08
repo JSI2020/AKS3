@@ -98,7 +98,11 @@ export async function getPublishedDesigns(
     return { items: [], total: 0, page, pageSize, pageCount: 0 };
   }
 
-  const conditions = [eq(designs.status, "PUBLISHED")];
+  const conditions = [
+    eq(designs.status, "PUBLISHED"),
+    // Soft-launch merch: hide numbered QA fixtures like "Test 12" from the house.
+    sql`NOT (${designs.name} ~* '^test[[:space:]]*[0-9]')`,
+  ];
 
   if (filters.designIds?.length) {
     conditions.push(inArray(designs.id, filters.designIds));

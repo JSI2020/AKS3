@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "Meta Social Technologies": {
+      "url": "https://mcp.facebook.com/devtools",
+      "type": "http"
+    },
+    "WhatsApp Business Tools": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.facebook.com/whatsapp_business_tools"
+      ]
+    }
+  }
+}

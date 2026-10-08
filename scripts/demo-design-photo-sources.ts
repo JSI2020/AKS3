@@ -32,12 +32,19 @@ const BOUTIQUE_STORES = [
   { baseUrl: "https://huimodest.com", credit: "huimodest.com (CN)" },
 ] as const;
 
-/** Hard reject junk AliExpress-style listings. */
+/** Hard reject junk + loud / off-brand fashion noise. */
 const REJECT_RE =
-  /lingerie|panty|panties|thong|g-string|sexy|erotic|babydoll|intimate|underwear|bra\b|watch|handbag|bag\b|dog|pet|puppy|hammock|light\b|switch|gateway|shoe|boot|bracelet|buddha|phone|case|charger|sensor|aqara|yeelight|geneva|wallet|socks|bonnet|underscarf|hat\b|cap\b|hairpin|hair pin|braces|belt|doily|slip dress|accessory|earrings|necklace|bangle|comb\b|fan\b|umbrella/i;
+  /lingerie|panty|panties|thong|g-string|sexy|erotic|babydoll|intimate|underwear|bra\b|watch|handbag|bag\b|dog|pet|puppy|hammock|light\b|switch|gateway|shoe|boot|bracelet|buddha|phone|case|charger|sensor|aqara|yeelight|geneva|wallet|socks|bonnet|underscarf|hat\b|cap\b|hairpin|hair pin|braces|belt|doily|slip dress|accessory|earrings|necklace|bangle|comb\b|fan\b|umbrella|neon|sequin|glitter|party|club|crop top|bikini|denim jacket|leather jacket|hoodie|sweatshirt|graphic tee/i;
 
 const ALLOW_RE =
-  /dress|qipao|cheongsam|hanfu|robe|abaya|kaftan|caftan|tunic|blouse|shirt|skirt|trouser|pant|palazzo|gown|maxi|jumpsuit|set\b|jacket|vest|coat|cardigan|top\b|outer|mamian|linen|ramie|hemp|silk/i;
+  /dress|qipao|cheongsam|hanfu|robe|abaya|kaftan|caftan|tunic|blouse|shirt|skirt|trouser|pant|palazzo|gown|maxi|jumpsuit|set\b|jacket|vest|coat|cardigan|top\b|outer|mamian|linen|ramie|hemp|silk|kurta|kameez|dupatta|stole|wrap/i;
+
+/** Prefer milk / ivory / bone / sand / soft neutrals for AKS White Collection feel. */
+const PREFER_NEUTRAL_RE =
+  /white|ivory|cream|bone|milk|oyster|sand|beige|taupe|linen|ramie|hemp|natural|off.?white|ecru|stone|khaki|tea|rose|olive|sage|soft|muted|plain|solid/i;
+
+const LOUD_COLOUR_RE =
+  /neon|fluorescent|hot pink|bright red|electric|rainbow|multicolou?r|tie.?dye|leopard|zebra|camo/i;
 
 const CATEGORY_RULES: Record<CatalogueLook["category"], RegExp> = {
   KAMEEZ:
@@ -68,8 +75,13 @@ function usableImages(images: ShopifyImage[]): string[] {
 
 function isApparelProduct(product: ShopifyProduct): boolean {
   const text = `${product.title} ${product.product_type ?? ""} ${(product.tags ?? []).join(" ")}`;
-  if (REJECT_RE.test(text)) return false;
+  if (REJECT_RE.test(text) || LOUD_COLOUR_RE.test(text)) return false;
   return ALLOW_RE.test(text);
+}
+
+function neutralScore(product: ShopifyProduct): number {
+  const text = `${product.title} ${(product.tags ?? []).join(" ")}`;
+  return PREFER_NEUTRAL_RE.test(text) ? 1 : 0;
 }
 
 function classifyProduct(product: ShopifyProduct): CatalogueLook["category"] {
@@ -133,6 +145,9 @@ export async function fetchBoutiquePhotoCatalog(): Promise<DesignPhotoCatalog> {
   ]);
 
   let total = 0;
+  const scored: { cat: CatalogueLook["category"]; triplet: DesignPhotoTriplet; score: number }[] =
+    [];
+
   for (const store of BOUTIQUE_STORES) {
     const products = await fetchStoreProducts(store.baseUrl);
     let added = 0;
@@ -140,11 +155,17 @@ export async function fetchBoutiquePhotoCatalog(): Promise<DesignPhotoCatalog> {
       const triplet = toTriplet(product, store.credit);
       if (!triplet) continue;
       const cat = classifyProduct(product);
-      catalog.get(cat)!.push(triplet);
+      scored.push({ cat, triplet, score: neutralScore(product) });
       added += 1;
       total += 1;
     }
     console.log(`  ${store.credit}: ${added} apparel product(s)`);
+  }
+
+  // Neutrals first — AKS White Collection / quiet pret, not loud fashion.
+  scored.sort((a, b) => b.score - a.score);
+  for (const row of scored) {
+    catalog.get(row.cat)!.push(row.triplet);
   }
 
   // Fill thin categories from gown/kameez pools (still real apparel).

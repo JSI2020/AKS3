@@ -239,6 +239,25 @@ export const STANDARD_SIZE_LABELS = [
   "XXL",
 ] as const;
 
+/** Soft-launch RTW range (ADR-0015) — storefront never offers outside this. */
+export const STOREFRONT_RTW_SIZE_LABELS = [
+  "XS",
+  "S",
+  "M",
+  "L",
+  "XL",
+] as const;
+
+const STOREFRONT_RTW_SIZE_SET = new Set<string>(STOREFRONT_RTW_SIZE_LABELS);
+
+/** Keep chart / picker labels inside the soft-launch XS–XL window. */
+export function filterStorefrontRtwSizeLabels(
+  labels: readonly string[],
+): string[] {
+  const filtered = labels.filter((label) => STOREFRONT_RTW_SIZE_SET.has(label));
+  return filtered.length > 0 ? filtered : [...STOREFRONT_RTW_SIZE_LABELS];
+}
+
 export function tagValueToCollectionSlug(value: string): string {
   return value.toLowerCase().replace(/_/g, "-");
 }
