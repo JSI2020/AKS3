@@ -47,10 +47,9 @@ function launchGated(): boolean {
 }
 
 /**
- * localePrefix "never": rewrite `/` → `/en` via nextUrl.clone().
- * Requires `experimental.trustHostHeader` so Next relativizes the rewrite
- * against https://Host (not http://0.0.0.0:3000), keeping it internal
- * behind Caddy.
+ * LocalePrefix "never" is handled by next.config `rewrites` (always internal).
+ * Do not rewrite `/` → `/en` here — absolute https rewrites behind Caddy are
+ * treated as external and loop with any `/en` → `/` redirect.
  */
 export default auth((req) => {
   const { pathname } = req.nextUrl;
@@ -64,41 +63,21 @@ export default auth((req) => {
     !pathname.startsWith("/auth") &&
     pathname !== "/coming-soon"
   ) {
+    // Redirect (not rewrite) so we never absolute-rewrite through Caddy.
     const url = req.nextUrl.clone();
     url.pathname = "/coming-soon";
-    return stampAnonCookie(
-      NextResponse.rewrite(url, {
-        request: { headers: reqWithAnon.headers },
-      }),
-      req,
-      anonId,
-    );
+    return stampAnonCookie(NextResponse.redirect(url), req, anonId);
   }
 
-  if (
-    pathname.startsWith("/admin") ||
-    pathname.startsWith("/api") ||
-    pathname.startsWith("/auth")
-  ) {
-    return stampAnonCookie(
-      NextResponse.next({
-        request: { headers: reqWithAnon.headers },
-      }),
-      req,
-      anonId,
-    );
-  }
-
+  // Public /en URLs → strip prefix (config rewrite maps `/` → `/en` internally).
   if (pathname === "/en" || pathname.startsWith("/en/")) {
     const url = req.nextUrl.clone();
     url.pathname = pathname.replace(/^\/en/, "") || "/";
     return stampAnonCookie(NextResponse.redirect(url), req, anonId);
   }
 
-  const url = req.nextUrl.clone();
-  url.pathname = pathname === "/" ? "/en" : `/en${pathname}`;
   return stampAnonCookie(
-    NextResponse.rewrite(url, {
+    NextResponse.next({
       request: { headers: reqWithAnon.headers },
     }),
     req,

@@ -27,14 +27,22 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: "12mb",
     },
-    // Behind Caddy, Node sees http://0.0.0.0:3000 while middleware rewrites
-    // use https://www…. Without this, Next treats those rewrites as external
-    // and proxies back through Caddy → redirect loop on `/`.
-    // Still read by resolve-routes in 15.5; dropped from ExperimentalConfig types.
-    ...( { trustHostHeader: true } as Record<string, unknown> ),
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
+  },
+  // localePrefix "never": map public paths → /en/* without middleware rewrites.
+  // Config rewrites stay internal; middleware absolute https rewrites did not
+  // behind Caddy (proxied externally → redirect loop).
+  async rewrites() {
+    return [
+      { source: "/", destination: "/en" },
+      {
+        source:
+          "/:path((?!admin|api|auth|coming-soon|en(?:/|$)|_next|.*\\..*).*)",
+        destination: "/en/:path",
+      },
+    ];
   },
 };
 
