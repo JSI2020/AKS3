@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   colourways,
@@ -209,6 +209,10 @@ async function seedOrderFixture() {
 }
 
 describe("manual order entry", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   let managerId: string;
   let fixture: Awaited<ReturnType<typeof seedOrderFixture>>;
 
@@ -234,6 +238,9 @@ describe("manual order entry", () => {
   });
 
   it("places a WhatsApp order with deposit through the shared flow", async () => {
+    // Deposit plans (50/50, 70/30) are retired; a staff-recorded bank
+    // transfer is a full prepayment, offered once the bank rail is on.
+    vi.stubEnv("AKS_PAY_BANK_TRANSFER", "1");
     authMock.mockResolvedValue({
       user: { id: managerId, role: "MANAGER" },
       expires: new Date(Date.now() + 3600_000).toISOString(),
@@ -249,7 +256,7 @@ describe("manual order entry", () => {
 
     const { depositAmountMinor } = computeDepositAmounts({
       totalMinor: price.unitPriceMinor,
-      plan: "DEPOSIT_50_COD_50",
+      plan: "FULL_PREPAID",
     });
 
     const result = await placeManualOrderAction({
@@ -279,7 +286,7 @@ describe("manual order entry", () => {
           quantity: 1,
         },
       ],
-      paymentPlan: "DEPOSIT_50_COD_50",
+      paymentPlan: "FULL_PREPAID",
       deposit: {
         amountMinor: depositAmountMinor,
         provider: "BANK_TRANSFER",

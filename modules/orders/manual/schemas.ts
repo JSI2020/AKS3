@@ -228,7 +228,7 @@ export function validatePlaceManualOrderInput(
     return {
       ok: false,
       error:
-        "Made-to-measure pieces cannot use the half-now plan. Choose 70% deposit or pay in full.",
+        "That payment plan isn't available. Choose cash on delivery or pay in full.",
     };
   }
 

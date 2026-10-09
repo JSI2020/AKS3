@@ -632,7 +632,7 @@ export async function updateDesignSizing(
       if (cat[0]) fitProfileIds = { [cat[0].key]: fitProfileId };
     }
 
-    let shadeSizes: Record<string, string[]> = {};
+    const shadeSizes: Record<string, string[]> = {};
     if (shadeSizesRaw) {
       try {
         const parsed = JSON.parse(shadeSizesRaw) as Record<string, string[]>;

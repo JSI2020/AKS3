@@ -165,7 +165,7 @@ export async function placeOrder(
       ok: false,
       error: codStatus.codDisabled
         ? "Cash on delivery is not available on your account. Choose pay in full."
-        : "Made-to-measure pieces cannot use the half-now plan. Choose 70% deposit or pay in full.",
+        : "That payment plan isn't available. Choose cash on delivery or pay in full.",
     };
   }
 

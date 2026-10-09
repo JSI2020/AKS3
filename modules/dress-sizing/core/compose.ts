@@ -46,7 +46,7 @@ export function composeChart(
       rows.push({ size, pomKey: pom.key, valueHundredths: Math.round(valueHundredths) });
     }
   }
-  let result = rows.map((row) => {
+  const result = rows.map((row) => {
     if (row.pomKey === "sleeveLength" || row.pomKey === "neckDrop") {
       return {
         ...row,

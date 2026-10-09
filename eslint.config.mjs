@@ -19,12 +19,15 @@ const config = [
       "node_modules/**",
       "reference/**",
       "Prompt/**",
+      // Standalone Bolt prototype (own package.json; excluded in tsconfig too).
+      "Bolt/**",
       "out/**",
       "coverage/**",
       "next-env.d.ts",
       // Seed/CLI scripts intentionally call app modules; not part of runtime graph.
       "packages/db/seed.ts",
       "packages/db/seed-demo.ts",
+      "packages/db/seed-pipeline-ui.ts",
       "scripts/**",
     ],
   },

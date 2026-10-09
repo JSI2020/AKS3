@@ -237,7 +237,10 @@ async function insertOrder(input: {
     designId: input.designId,
     colourwayId: input.colourwayId,
     designSnapshot: { name: "Inventory Test Kameez", slug: "inv-test" },
-    sizeMode: "STANDARD",
+    // Fabric is reserved for MADE_TO_MEASURE lines only (RTW/STANDARD stock
+    // was cut when finished pieces were received), so these fabric-lifecycle
+    // tests use the made-to-measure path.
+    sizeMode: "MADE_TO_MEASURE",
     sizeLabel: "M",
     measurementSnapshot: {
       sessionId: "standard:M",

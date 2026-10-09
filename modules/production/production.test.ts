@@ -179,7 +179,9 @@ describe("production board", () => {
       designId,
       colourwayId,
       designSnapshot: { name: "Production Test Kameez", slug: "production-test" },
-      sizeMode: "STANDARD",
+      // Fabric reservation (asserted below) applies to MADE_TO_MEASURE lines
+      // only; RTW/STANDARD lines skip it by design.
+      sizeMode: "MADE_TO_MEASURE",
       sizeLabel: "M",
       measurementSnapshot: {
         sessionId: "standard:M",

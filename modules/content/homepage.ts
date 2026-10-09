@@ -527,7 +527,7 @@ export async function listFeaturedBlocksAdmin(homepageId: string) {
 }
 
 async function ensurePublishedHomepage() {
-  let published = await getPublishedHomepageRow();
+  const published = await getPublishedHomepageRow();
   if (published) return published;
   const draft = await getOrCreateDraftHomepage();
   const id = uuidv7();

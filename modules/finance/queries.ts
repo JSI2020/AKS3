@@ -388,7 +388,7 @@ export async function getFinanceOverview(range: ResolvedTimeRange) {
 
   let codBased = 0;
   let fullPrepay = 0;
-  let bankFull = 0;
+  const bankFull = 0;
   for (const p of planRows) {
     const n = Number(p.n);
     if (p.plan === "FULL_PREPAID") fullPrepay += n;

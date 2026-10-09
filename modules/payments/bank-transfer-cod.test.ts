@@ -251,6 +251,19 @@ describe("bank transfer and COD", () => {
       placedAt: new Date(),
     });
 
+    // The COD balance is computed from the payments ledger, not the planned
+    // balance column — so record the verified 50% deposit first.
+    await db.insert(payments).values({
+      id: uuidv7(),
+      orderId,
+      provider: "BANK_TRANSFER",
+      kind: "DEPOSIT",
+      amountMinor: 500000,
+      currency: "PKR",
+      status: "SUCCEEDED",
+      idempotencyKey: `test-deposit:${orderId}`,
+    });
+
     await db.transaction(async (tx) => {
       await recordCodBalanceOnDelivery(orderId, uuidv7(), tx);
     });
@@ -259,10 +272,11 @@ describe("bank transfer and COD", () => {
       .select()
       .from(payments)
       .where(eq(payments.orderId, orderId));
-    expect(codRows).toHaveLength(1);
-    expect(codRows[0]?.provider).toBe("COD");
-    expect(codRows[0]?.kind).toBe("BALANCE");
-    expect(codRows[0]?.amountMinor).toBe(500000);
+    const codBalance = codRows.filter((r) => r.provider === "COD");
+    expect(codBalance).toHaveLength(1);
+    expect(codBalance[0]?.provider).toBe("COD");
+    expect(codBalance[0]?.kind).toBe("BALANCE");
+    expect(codBalance[0]?.amountMinor).toBe(500000);
   });
 
   it("disables COD after delivery refusal", async () => {
