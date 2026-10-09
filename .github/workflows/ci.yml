@@ -32,7 +32,17 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Same build-time placeholders as the Dockerfile: the DB client needs a
+      # URL at import time, but no database is reached while building (shop
+      # pages render on demand). Secrets stay runtime-only.
       - name: Build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+          DATABASE_URL: postgresql://aks:aks@127.0.0.1:1/aks
+          AUTH_SECRET: build-time-placeholder-not-used-at-runtime
+          AUTH_URL: https://www.aks-atelier.com
+          NEXT_PUBLIC_SITE_URL: https://www.aks-atelier.com
+          AI_GENERATION_MOCK: "1"
         run: npm run build
 
   test:
