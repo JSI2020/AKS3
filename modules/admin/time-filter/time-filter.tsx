@@ -7,14 +7,23 @@ import {
   TIME_RANGE_PRESETS,
   type TimeRangePreset,
 } from "./time-range";
-import { timeRangeNuqsParsers } from "./search-params";
+import {
+  rangeBaseParser,
+  timeRangeNuqsParsers,
+} from "./search-params";
+
+type TimeFilterParsers = {
+  range: typeof rangeBaseParser | typeof timeRangeNuqsParsers.range;
+  from: typeof timeRangeNuqsParsers.from;
+  to: typeof timeRangeNuqsParsers.to;
+};
 
 type AdminTimeFilterProps = {
   className?: string;
   /** When false, omit the opt-out chip (finance/insights keep implicit month). */
   showAllTime?: boolean;
-  /** Match the page's nuqs parsers — orders uses no default range. */
-  parsers?: typeof timeRangeNuqsParsers;
+  /** Match the page's nuqs parsers. Accepts defaulted or opt-in (orders) range. */
+  parsers?: TimeFilterParsers;
 };
 
 /**
@@ -24,9 +33,13 @@ type AdminTimeFilterProps = {
 export function AdminTimeFilter({
   className,
   showAllTime = false,
-  parsers = timeRangeNuqsParsers,
+  parsers,
 }: AdminTimeFilterProps) {
-  const [params, setParams] = useQueryStates(parsers, {
+  // Default here (not in the param) so a no-default `range` from orders
+  // stays assignable to `parsers` without colliding with withDefault("month").
+  const resolvedParsers = (parsers ??
+    timeRangeNuqsParsers) as typeof timeRangeNuqsParsers;
+  const [params, setParams] = useQueryStates(resolvedParsers, {
     history: "push",
     shallow: false,
   });
