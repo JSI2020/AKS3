@@ -23,14 +23,18 @@ export type RenderRow = {
   isAiGenerated: boolean;
 };
 
-/** Pure helper — maps cached render rows to the gallery triple (first row per angle wins). */
+/**
+ * Pure helper — maps cached render rows to the gallery triple. A real photo
+ * wins over an AI visualisation for the same angle; otherwise the first row
+ * per angle (by sort order) wins.
+ */
 export function buildImageTripleFromRows(rows: RenderRow[]): ResolvedImageTriple {
   const byAngle = new Map<string, RenderRow>();
   for (const row of rows) {
-    if (
-      (GALLERY_ANGLES as readonly string[]).includes(row.angle) &&
-      !byAngle.has(row.angle)
-    ) {
+    if (!(GALLERY_ANGLES as readonly string[]).includes(row.angle)) continue;
+    if (isFabricSwatchRender(row)) continue;
+    const current = byAngle.get(row.angle);
+    if (!current || (current.isAiGenerated && !row.isAiGenerated)) {
       byAngle.set(row.angle, row);
     }
   }
@@ -104,6 +108,8 @@ async function presignFabricPhotos(
 /**
  * Reads cached design_renders only — never generates images.
  * Returns presigned URLs for FRONT, THREE_QUARTER, BACK, plus fabric swatches last.
+ * Promoted AI visualisations are included (the gallery labels them) so the PDP
+ * matches the product cards; real photos still take precedence per angle.
  */
 export async function resolveImages(
   designId: string,
@@ -124,7 +130,6 @@ export async function resolveImages(
       and(
         eq(designRenders.designId, designId),
         eq(designRenders.colourwayId, colourwayId),
-        eq(designRenders.isAiGenerated, false),
       ),
     )
     .orderBy(asc(designRenders.sortOrder));

@@ -74,7 +74,7 @@ export function SearchPageView({
             <SearchEmptyState query={query} />
           ) : (
             <>
-              <div className="grid">
+              <div className="product-grid">
                 {items.map((design) => (
                   <DesignCard
                     key={design.id}

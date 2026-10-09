@@ -6,14 +6,21 @@ import { useCart } from "./cart-context";
 
 /**
  * Fixed bottom-end toast after successful add-to-cart (prototype C).
+ * Suppressed while the cart drawer is open — the drawer already shows the new
+ * line, and the toast would sit on top of its checkout button.
  */
 export function AddToCartToast() {
-  const { lastAddedName, clearLastAdded, openDrawer } = useCart();
+  const { lastAddedName, clearLastAdded, openDrawer, drawerOpen } = useCart();
   const [visible, setVisible] = useState(false);
   const [text, setText] = useState("");
 
   useEffect(() => {
     if (!lastAddedName) return;
+    if (drawerOpen) {
+      setVisible(false);
+      clearLastAdded();
+      return;
+    }
 
     setText(lastAddedName);
     setVisible(true);
@@ -24,7 +31,7 @@ export function AddToCartToast() {
     }, 2600);
 
     return () => window.clearTimeout(hide);
-  }, [lastAddedName, clearLastAdded]);
+  }, [lastAddedName, clearLastAdded, drawerOpen]);
 
   return (
     <div
@@ -37,6 +44,7 @@ export function AddToCartToast() {
       <button
         type="button"
         className="toast-bag"
+        tabIndex={visible ? 0 : -1}
         onClick={() => {
           openDrawer();
           setVisible(false);

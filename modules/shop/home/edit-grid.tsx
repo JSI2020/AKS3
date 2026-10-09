@@ -70,7 +70,7 @@ export function EditGrid({
           </button>
         ))}
       </div>
-      <div className="grid edit-mosaic">
+      <div className="product-grid edit-mosaic">
         {filtered.length === 0 ? (
           <p
             className="col-span-full text-[14px]"

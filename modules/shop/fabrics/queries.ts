@@ -1,4 +1,4 @@
-import { asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 
 import { db, fabrics } from "@aks/db";
 
@@ -26,7 +26,14 @@ export async function listStorefrontFabrics(): Promise<FabricLibraryRow[]> {
       swatchAssetId: fabrics.swatchAssetId,
     })
     .from(fabrics)
-    .where(eq(fabrics.active, true))
+    .where(
+      and(
+        eq(fabrics.active, true),
+        // QA fixtures ("inventory test lawn") — the test suite shares the dev
+        // database and leaves these active on every run.
+        sql`NOT (${fabrics.name} ~* '[[:<:]]test[[:>:]]')`,
+      ),
+    )
     .orderBy(asc(fabrics.name));
 
   // The catalogue can hold several stock rows of the same cloth (one per

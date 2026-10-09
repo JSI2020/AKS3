@@ -37,7 +37,11 @@ export function CartHeaderButton({
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <use href="#ic-bag" />
         </svg>
-        <span className={`count${cart.itemCount > 0 ? " show" : ""}`}>
+        {/* Keyed by count so the bump animation replays on every change. */}
+        <span
+          key={cart.itemCount}
+          className={`count${cart.itemCount > 0 ? " show" : ""}`}
+        >
           {cart.itemCount}
         </span>
       </button>

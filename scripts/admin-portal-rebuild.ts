@@ -123,7 +123,7 @@ const FABRICS: Array<{
   {
     name: "Cotton Tea Rose",
     composition: "Soft cotton",
-    character: "Muted blush — Lahore Edit accent",
+    character: "Muted blush — a soft accent for the everyday",
     drape: "Medium",
     price: "1500",
     metres: "50",

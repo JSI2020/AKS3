@@ -62,15 +62,21 @@ export function DesignGallery({
   const activeFabric =
     fabricIdx != null ? (images.fabricPhotos[fabricIdx] ?? null) : null;
 
+  // Only angles that actually have a photo get a slide/thumbnail; with none at
+  // all, FRONT stays as the single (placeholder) slide.
+  const photoAngles = GALLERY_ANGLES.filter((a) => images[a]?.url);
+  const angles: readonly GalleryAngle[] =
+    photoAngles.length > 0 ? photoAngles : ["FRONT"];
+  const shownAngle: GalleryAngle = angles.includes(angle) ? angle : angles[0]!;
+
   const allSlides = [
-    ...GALLERY_ANGLES.map((a) => ({ kind: "angle" as const, angle: a })),
+    ...angles.map((a) => ({ kind: "angle" as const, angle: a })),
     ...images.fabricPhotos.map((_, i) => ({ kind: "fabric" as const, index: i })),
   ];
 
   const activeSlideIdx =
-    fabricIdx != null
-      ? GALLERY_ANGLES.length + fabricIdx
-      : GALLERY_ANGLES.indexOf(angle);
+    fabricIdx != null ? angles.length + fabricIdx : angles.indexOf(shownAngle);
+  const showThumbs = allSlides.length > 1;
 
   const cycleSlide = useCallback(
     (direction: 1 | -1) => {
@@ -118,9 +124,9 @@ export function DesignGallery({
             />
           </div>
         ) : (
-          GALLERY_ANGLES.map((a) => {
+          angles.map((a) => {
             const img = images[a];
-            const visible = fabricIdx == null && a === angle;
+            const visible = fabricIdx == null && a === shownAngle;
             return (
               <div
                 key={a}
@@ -146,75 +152,87 @@ export function DesignGallery({
           })
         )}
 
-        {showAiLabel(images) && fabricIdx == null ? (
-          <span className="slot-tag">AI visualization</span>
+        {fabricIdx == null &&
+        (showAiLabel(images) || images.shownInColourwayName) ? (
+          <span className="slot-tag">
+            {[
+              images.shownInColourwayName
+                ? `Shown in ${images.shownInColourwayName}`
+                : null,
+              showAiLabel(images) ? "AI visualization" : null,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
+          </span>
         ) : null}
       </div>
 
-      <div className="pdp-angles">
-        {GALLERY_ANGLES.map((a) => {
-          const img = images[a];
-          const active = fabricIdx == null && a === angle;
-          return (
-            <button
-              key={a}
-              type="button"
-              className={`a${active ? " on" : ""}`}
-              aria-label={ANGLE_LABELS[a]}
-              aria-current={active ? "true" : undefined}
-              onClick={() => {
-                setFabricIdx(null);
-                onAngleChange(a);
-              }}
-            >
-              {img?.url ? (
-                <Image
-                  src={img.url}
-                  alt=""
-                  fill
-                  sizes="120px"
-                  className="object-cover"
-                  unoptimized
-                />
-              ) : (
-                <ImageSlotPlaceholder
-                  silhouette={sil}
-                  fill="rgba(244,238,225,.85)"
-                />
-              )}
-            </button>
-          );
-        })}
-        {images.fabricPhotos.map((photo, idx) => {
-          const active = fabricIdx === idx;
-          return (
-            <button
-              key={`fabric-${photo.assetId}-${idx}`}
-              type="button"
-              className={`a${active ? " on" : ""}`}
-              aria-label="Fabric"
-              aria-current={active ? "true" : undefined}
-              onClick={() => setFabricIdx(idx)}
-            >
-              {photo.url ? (
-                <Image
-                  src={photo.url}
-                  alt=""
-                  fill
-                  sizes="120px"
-                  className="object-cover"
-                  unoptimized
-                />
-              ) : (
-                <ImageSlotPlaceholder
-                  silhouette={sil}
-                  fill="rgba(244,238,225,.85)"
-                />
-              )}
-            </button>
-          );
-        })}
-      </div>
+      {showThumbs ? (
+        <div className="pdp-angles">
+          {angles.map((a) => {
+            const img = images[a];
+            const active = fabricIdx == null && a === shownAngle;
+            return (
+              <button
+                key={a}
+                type="button"
+                className={`a${active ? " on" : ""}`}
+                aria-label={ANGLE_LABELS[a]}
+                aria-current={active ? "true" : undefined}
+                onClick={() => {
+                  setFabricIdx(null);
+                  onAngleChange(a);
+                }}
+              >
+                {img?.url ? (
+                  <Image
+                    src={img.url}
+                    alt=""
+                    fill
+                    sizes="120px"
+                    className="object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <ImageSlotPlaceholder
+                    silhouette={sil}
+                    fill="rgba(244,238,225,.85)"
+                  />
+                )}
+              </button>
+            );
+          })}
+          {images.fabricPhotos.map((photo, idx) => {
+            const active = fabricIdx === idx;
+            return (
+              <button
+                key={`fabric-${photo.assetId}-${idx}`}
+                type="button"
+                className={`a${active ? " on" : ""}`}
+                aria-label="Fabric"
+                aria-current={active ? "true" : undefined}
+                onClick={() => setFabricIdx(idx)}
+              >
+                {photo.url ? (
+                  <Image
+                    src={photo.url}
+                    alt=""
+                    fill
+                    sizes="120px"
+                    className="object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <ImageSlotPlaceholder
+                    silhouette={sil}
+                    fill="rgba(244,238,225,.85)"
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
     </div>
   );
 }

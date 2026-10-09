@@ -10,6 +10,7 @@ import {
 } from "@/modules/catalog";
 import type { GalleryAngle, SizeMode } from "@/modules/catalog";
 import { DesignViewTracker } from "@/modules/analytics";
+import { RelatedDesigns } from "@/modules/catalog/related-designs";
 import {
   formatLeadTimeLine,
   getSiteSettings,
@@ -52,6 +53,32 @@ export default async function DesignDetailPage({ params, searchParams }: Props) 
     }),
   );
 
+  // A shade with no photos of its own borrows the first shade that has some
+  // (default first), flagged so the gallery can say which shade is pictured.
+  const hasPhotos = (imgs: (typeof imagesByColourway)[string] | undefined) =>
+    Boolean(imgs?.FRONT?.url || imgs?.THREE_QUARTER?.url || imgs?.BACK?.url);
+  const photoSource = [...design.colourways]
+    .sort(
+      (a, b) =>
+        Number(b.id === design.defaultColourwayId) -
+        Number(a.id === design.defaultColourwayId),
+    )
+    .find((cw) => hasPhotos(imagesByColourway[cw.id]));
+  if (photoSource) {
+    const source = imagesByColourway[photoSource.id]!;
+    for (const cw of design.colourways) {
+      const own = imagesByColourway[cw.id];
+      if (hasPhotos(own)) continue;
+      imagesByColourway[cw.id] = {
+        FRONT: source.FRONT,
+        THREE_QUARTER: source.THREE_QUARTER,
+        BACK: source.BACK,
+        fabricPhotos: own?.fabricPhotos ?? [],
+        shownInColourwayName: photoSource.name,
+      };
+    }
+  }
+
   const sizeChart = await resolveDesignSizeChart({
     sizeBlockId: design.sizeBlockId,
     pieceSizeBlocks: design.pieceSizeBlocks,
@@ -84,7 +111,9 @@ export default async function DesignDetailPage({ params, searchParams }: Props) 
         initialSizeLabel={sizeLabel}
         initialQuantity={quantity}
         leadTimePromise={leadTimePromise}
+        whatsappUrl={settings.whatsappUrl || undefined}
       />
+      <RelatedDesigns design={design} />
     </main>
   );
 }

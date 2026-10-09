@@ -256,7 +256,7 @@ export async function seedContentDefaults(): Promise<void> {
   const navCount = await db.select({ id: navItems.id }).from(navItems).limit(1);
   if (!navCount[0]) {
     const header = [
-      { label: "Shop", link: hashLink("#cats"), order: 0 },
+      { label: "Shop", link: pageLink("collections"), order: 0 },
       { label: "The Edit", link: hashLink("#edit"), order: 1 },
       { label: "Fabric", link: pageLink("fabrics"), order: 2 },
       { label: "Atelier", link: hashLink("#making"), order: 3 },

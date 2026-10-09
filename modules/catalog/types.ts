@@ -130,6 +130,8 @@ export type ResolvedImageTriple = Record<GalleryAngle, ResolvedRenderImage>;
 /** PDP gallery: three angles plus fabric swatch renders (always last). */
 export type ResolvedGalleryImages = ResolvedImageTriple & {
   fabricPhotos: NonNullable<ResolvedRenderImage>[];
+  /** Set when this shade has no photos and another shade's are shown instead. */
+  shownInColourwayName?: string;
 };
 
 export type DesignColourwayPublic = {

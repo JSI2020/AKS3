@@ -8,12 +8,15 @@ type Props = {
   colourways: DesignColourwayPublic[];
   colourwayId: string;
   onSelect: (colourwayId: string) => void;
+  /** Shade has no stock in any size — still selectable, but marked. */
+  isSoldOut?: (colourwayId: string) => boolean;
 };
 
 export function DesignColourwayPicker({
   colourways,
   colourwayId,
   onSelect,
+  isSoldOut,
 }: Props) {
   const selected =
     colourways.find((c) => c.id === colourwayId) ?? colourways[0];
@@ -26,14 +29,15 @@ export function DesignColourwayPicker({
       <div className="colours" role="group" aria-labelledby="pdp-shade-label">
         {colourways.map((cw) => {
           const active = cw.id === colourwayId;
+          const soldOut = isSoldOut?.(cw.id) ?? false;
           return (
             <button
               key={cw.id}
               type="button"
-              className={`colour${active ? " on" : ""}`}
-              aria-label={cw.name}
+              className={`colour${active ? " on" : ""}${soldOut ? " sold-out" : ""}`}
+              aria-label={soldOut ? `${cw.name}, sold out` : cw.name}
               aria-pressed={active}
-              title={cw.name}
+              title={soldOut ? `${cw.name} — sold out` : cw.name}
               onClick={() => onSelect(cw.id)}
               style={
                 !cw.swatch?.url && cw.hexApproximation

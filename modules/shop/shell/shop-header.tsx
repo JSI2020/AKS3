@@ -65,9 +65,9 @@ function FallbackNavLinks({
   if (homeNav) {
     return (
       <>
-        <a href="#cats" onClick={onClick}>
+        <Link href="/collections" onClick={onClick}>
           {t("navShop")}
-        </a>
+        </Link>
         <a href="#edit" onClick={onClick}>
           {t("navEdit")}
         </a>

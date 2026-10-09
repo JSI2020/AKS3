@@ -114,7 +114,7 @@ export function CollectionPageView({
           : `${total} ${total === 1 ? "piece" : "pieces"}`}
       </p>
 
-      <div className="grid">
+      <div className="product-grid">
         {items.map((design) => (
           <DesignCard
             key={design.id}

@@ -62,6 +62,7 @@ describe("buildImageTripleFromRows", () => {
         altText: "Detail",
         r2Key: "renders/detail.jpg",
         sortOrder: 3,
+        isAiGenerated: true,
       },
       {
         angle: "FRONT",
@@ -69,11 +70,46 @@ describe("buildImageTripleFromRows", () => {
         altText: "Second front",
         r2Key: "renders/front-2.jpg",
         sortOrder: 4,
+        isAiGenerated: true,
       },
     ]);
 
     expect(triple.FRONT?.assetId).toBe("a1");
     expect(triple).not.toHaveProperty("DETAIL");
+  });
+
+  it("prefers a real photo over an AI visualisation for the same angle", () => {
+    const triple = buildImageTripleFromRows([
+      ...rows,
+      {
+        angle: "FRONT",
+        assetId: "photo",
+        altText: "Studio front",
+        r2Key: "renders/photo.jpg",
+        sortOrder: 9,
+        isAiGenerated: false,
+      },
+    ]);
+
+    expect(triple.FRONT?.assetId).toBe("photo");
+    expect(triple.FRONT?.isAiGenerated).toBe(false);
+    expect(triple.THREE_QUARTER?.assetId).toBe("a2");
+  });
+
+  it("never uses a fabric swatch render as a garment angle", () => {
+    const triple = buildImageTripleFromRows([
+      {
+        angle: "FRONT",
+        assetId: "swatch",
+        altText: "__aks_fabric_swatch__",
+        r2Key: "renders/swatch.jpg",
+        sortOrder: 0,
+        isAiGenerated: false,
+      },
+      rows[0]!,
+    ]);
+
+    expect(triple.FRONT?.assetId).toBe("a1");
   });
 
   it("fills missing angles with null", () => {

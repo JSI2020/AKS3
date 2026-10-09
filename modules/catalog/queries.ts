@@ -100,8 +100,11 @@ export async function getPublishedDesigns(
 
   const conditions = [
     eq(designs.status, "PUBLISHED"),
-    // Soft-launch merch: hide numbered QA fixtures like "Test 12" from the house.
+    // Soft-launch merch: hide QA fixtures from the house — numbered ones like
+    // "Test 12" and the suite's "Inventory Test Kameez" style (the test suite
+    // shares the dev database and publishes these on every run).
     sql`NOT (${designs.name} ~* '^test[[:space:]]*[0-9]')`,
+    sql`NOT (${designs.name} ~* '[[:<:]]test[[:>:]]')`,
   ];
 
   if (filters.designIds?.length) {

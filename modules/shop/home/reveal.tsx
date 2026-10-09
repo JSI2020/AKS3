@@ -51,9 +51,13 @@ export function Reveal({
 
     io.observe(el);
 
-    // Failsafe: if the observer somehow never fires, reveal after a beat so
-    // the page can't get stuck blank.
-    const t = window.setTimeout(reveal, 1800);
+    // Failsafe: if the observer somehow never fires for a section that is
+    // already on screen (or scrolled past), reveal it after a beat so the page
+    // can't get stuck blank. Sections still below the fold are left to the
+    // observer — revealing them on a timer would play the entrance unseen.
+    const t = window.setTimeout(() => {
+      if (el.getBoundingClientRect().top < window.innerHeight) reveal();
+    }, 1800);
 
     return () => {
       io.disconnect();

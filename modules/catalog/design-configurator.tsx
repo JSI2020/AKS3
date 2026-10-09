@@ -43,6 +43,7 @@ type Props = {
   initialSizeLabel: string | null;
   initialQuantity: number;
   leadTimePromise?: string;
+  whatsappUrl?: string;
 };
 
 function leadLine(
@@ -66,16 +67,34 @@ export function DesignConfigurator({
   initialSizeLabel,
   initialQuantity,
   leadTimePromise,
+  whatsappUrl,
 }: Props) {
   const [urlState, setUrlState] = useQueryStates(designDetailParsers, {
     history: "push",
     shallow: false,
   });
 
+  // Without an explicit shade in the URL, open on the default shade only if it
+  // can be bought — otherwise the first shade with stock, so the page never
+  // lands on a dead end when another colour is available.
+  const shadeInStock = (cwId: string) => {
+    const cw = design.colourways.find((c) => c.id === cwId);
+    if (!cw) return false;
+    const stock = design.rtwAvailability[cwId] ?? {};
+    return resolveShadeSizeLabels(cw, design).some(
+      (label) => (stock[label] ?? 0) > 0,
+    );
+  };
+  const fallbackColourwayId = shadeInStock(design.defaultColourwayId)
+    ? design.defaultColourwayId
+    : (design.colourways.find((c) => shadeInStock(c.id))?.id ??
+      design.defaultColourwayId);
+  const designSoldOut = !design.colourways.some((c) => shadeInStock(c.id));
+
   const initialColourwayId = resolveColourwayId(
     initialColourwayParam,
     design.colourways,
-    design.defaultColourwayId,
+    fallbackColourwayId,
   );
 
   const [measurements, setMeasurements] = useState<Record<string, number>>({});
@@ -193,6 +212,20 @@ export function DesignConfigurator({
     [design.colourways, setUrlState],
   );
 
+  const stickyBar = useMemo(
+    () => ({
+      onChooseSize: () => {
+        const head = document.getElementById("pdp-size-head");
+        head?.scrollIntoView({ behavior: "smooth", block: "center" });
+        const firstOpen = document.querySelector<HTMLButtonElement>(
+          ".std button:not(:disabled)",
+        );
+        firstOpen?.focus({ preventScroll: true });
+      },
+    }),
+    [],
+  );
+
   const handleSelectSizeFromGuide = useCallback(
     (sizeLabel: string) => {
       patchState({ sizeMode: "STANDARD", sizeLabel });
@@ -237,7 +270,18 @@ export function DesignConfigurator({
         <DesignColourwayPicker
           colourways={design.colourways}
           colourwayId={state.colourwayId}
-          onSelect={(id) => patchState({ colourwayId: id })}
+          isSoldOut={(id) => !designSoldOut && !shadeInStock(id)}
+          onSelect={(id) => {
+            // Keep the chosen size when the new shade has it in stock.
+            const keepSize =
+              state.sizeLabel != null &&
+              (design.rtwAvailability[id]?.[state.sizeLabel] ?? 0) > 0;
+            patchState(
+              keepSize
+                ? { colourwayId: id }
+                : { colourwayId: id, sizeLabel: null },
+            );
+          }}
         />
 
         <DesignSizePicker
@@ -250,12 +294,24 @@ export function DesignConfigurator({
           onOpenSizeGuide={() => setSizeGuideOpen(true)}
         />
 
-        {colourwaySoldOut ? (
-          <p
-            className="pdp-desc"
-            style={{ marginTop: "0.75rem", color: "var(--taupe)" }}
-          >
-            This colour is sold out. Try another swatch.
+        {designSoldOut ? (
+          <p className="pdp-soldout" role="status">
+            Sold out in every size for now. New pieces are cut in small runs
+            {whatsappUrl ? (
+              <>
+                {" — "}
+                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                  message us on WhatsApp
+                </a>{" "}
+                to hear when it&apos;s back.
+              </>
+            ) : (
+              "; check back soon."
+            )}
+          </p>
+        ) : colourwaySoldOut ? (
+          <p className="pdp-soldout" role="status">
+            {selectedColourway.name} is sold out. Pick another shade above.
           </p>
         ) : null}
 
@@ -269,6 +325,8 @@ export function DesignConfigurator({
           customizationSelections={{}}
           displayPriceMinor={displayPriceMinor}
           images={images}
+          soldOut={colourwaySoldOut}
+          stickyBar={stickyBar}
         />
 
         <div className="pdp-detail">
