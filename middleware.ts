@@ -73,8 +73,7 @@ export default auth((req) => {
     !pathname.startsWith("/auth") &&
     pathname !== "/coming-soon"
   ) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/coming-soon";
+    const url = new URL("/coming-soon", req.url);
     return stampAnonCookie(
       NextResponse.rewrite(url, {
         request: { headers: reqWithAnon.headers },
@@ -99,13 +98,18 @@ export default auth((req) => {
   }
 
   if (pathname === "/en" || pathname.startsWith("/en/")) {
-    const url = req.nextUrl.clone();
-    url.pathname = pathname.replace(/^\/en/, "") || "/";
+    // Strip prefix using the raw request URL origin (http://… behind Caddy),
+    // not nextUrl which may already be https://www… via forwarded headers.
+    const url = new URL(pathname.replace(/^\/en/, "") || "/", req.url);
     return stampAnonCookie(NextResponse.redirect(url), req, anonId);
   }
 
-  const rewriteUrl = req.nextUrl.clone();
-  rewriteUrl.pathname = pathname === "/" ? "/en" : `/en${pathname}`;
+  // Use req.url (connection origin), not nextUrl — otherwise a rewrite to
+  // https://www…/en is treated as an external proxy and loops with /en→/.
+  const rewriteUrl = new URL(
+    pathname === "/" ? "/en" : `/en${pathname}`,
+    req.url,
+  );
   return stampAnonCookie(
     NextResponse.rewrite(rewriteUrl, {
       request: { headers: reqWithAnon.headers },
