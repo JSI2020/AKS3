@@ -41,25 +41,15 @@ function stampAnonCookie(
   return res;
 }
 
-/**
- * Pre-launch holding gate. While the storefront isn't live, set the env var
- * COMING_SOON (1 / true / on) and every shop URL serves /coming-soon. Admin,
- * API and Next internals stay reachable so the shop can be run behind the
- * curtain. Unset COMING_SOON (or set it 0) to open the real store — no other
- * change required.
- */
 function launchGated(): boolean {
   const v = process.env.COMING_SOON?.trim().toLowerCase();
   return v === "1" || v === "true" || v === "on" || v === "yes";
 }
 
 /**
- * Admin: Auth.js JWT gate.
- * Storefront: English-only, no locale prefix (rewrite into `/en/*` internally).
- *
- * Important: rewrites MUST stay on the same origin as `req.nextUrl` (the
- * internal `http://…` URL Node sees behind Caddy). Rewriting to an absolute
- * `https://www…/en` is treated as an external proxy and creates a / ↔ /en loop.
+ * LocalePrefix "never": rewrite with path-only destinations so Next keeps
+ * them internal behind Caddy (absolute https URLs were proxied externally
+ * and looped with `/en` → `/`).
  */
 export default auth((req) => {
   const { pathname } = req.nextUrl;
@@ -68,14 +58,13 @@ export default auth((req) => {
 
   if (
     launchGated() &&
-    !pathname.startsWith("/admin") &&
     !pathname.startsWith("/api") &&
+    !pathname.startsWith("/admin") &&
     !pathname.startsWith("/auth") &&
     pathname !== "/coming-soon"
   ) {
-    const url = new URL("/coming-soon", req.url);
     return stampAnonCookie(
-      NextResponse.rewrite(url, {
+      NextResponse.rewrite("/coming-soon", {
         request: { headers: reqWithAnon.headers },
       }),
       req,
@@ -98,20 +87,13 @@ export default auth((req) => {
   }
 
   if (pathname === "/en" || pathname.startsWith("/en/")) {
-    // Strip prefix using the raw request URL origin (http://… behind Caddy),
-    // not nextUrl which may already be https://www… via forwarded headers.
-    const url = new URL(pathname.replace(/^\/en/, "") || "/", req.url);
-    return stampAnonCookie(NextResponse.redirect(url), req, anonId);
+    const dest = pathname.replace(/^\/en/, "") || "/";
+    return stampAnonCookie(NextResponse.redirect(dest), req, anonId);
   }
 
-  // Use req.url (connection origin), not nextUrl — otherwise a rewrite to
-  // https://www…/en is treated as an external proxy and loops with /en→/.
-  const rewriteUrl = new URL(
-    pathname === "/" ? "/en" : `/en${pathname}`,
-    req.url,
-  );
+  const destPath = pathname === "/" ? "/en" : `/en${pathname}`;
   return stampAnonCookie(
-    NextResponse.rewrite(rewriteUrl, {
+    NextResponse.rewrite(destPath, {
       request: { headers: reqWithAnon.headers },
     }),
     req,
