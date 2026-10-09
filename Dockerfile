@@ -17,12 +17,13 @@ RUN apt-get update \
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build-time placeholders — real values come from compose/runtime env.
+# NEXT_PUBLIC_* is inlined at build — use the production site URL so the
+# client/middleware never bake in localhost. Secrets stay runtime-only.
 ENV NEXT_TELEMETRY_DISABLED=1 \
     DATABASE_URL=postgresql://aks:aks@postgres:5432/aks \
     AUTH_SECRET=build-time-placeholder-not-used-at-runtime \
-    AUTH_URL=http://localhost:3000 \
-    NEXT_PUBLIC_SITE_URL=http://localhost:3000 \
+    AUTH_URL=https://www.aks-atelier.com \
+    NEXT_PUBLIC_SITE_URL=https://www.aks-atelier.com \
     AI_GENERATION_MOCK=1
 
 RUN npm run build

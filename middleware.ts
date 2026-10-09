@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import NextAuth from "next-auth";
-import createIntlMiddleware from "next-intl/middleware";
 
 import { authConfig } from "./auth.config";
-import { routing } from "./i18n/routing";
 
 const { auth } = NextAuth(authConfig);
-const intlMiddleware = createIntlMiddleware(routing);
 
 export const ANON_COOKIE = "aks_anon";
 export const ANON_HEADER = "x-aks-anon";
@@ -121,7 +118,25 @@ export default auth((req) => {
     }), forwarded, anonId);
   }
 
-  return stampAnonCookie(intlMiddleware(reqWithAnon), forwarded, anonId);
+  // localePrefix: "never" — keep rewrites/redirects on the same origin as the
+  // incoming request. next-intl's middleware emits an absolute https:// rewrite
+  // while Node still sees http:// behind Caddy, which Next proxies externally
+  // and turns into a / ↔ /en redirect loop.
+  if (pathname === "/en" || pathname.startsWith("/en/")) {
+    const url = forwarded.nextUrl.clone();
+    url.pathname = pathname.replace(/^\/en/, "") || "/";
+    return stampAnonCookie(NextResponse.redirect(url), forwarded, anonId);
+  }
+
+  const rewriteUrl = forwarded.nextUrl.clone();
+  rewriteUrl.pathname = pathname === "/" ? "/en" : `/en${pathname}`;
+  return stampAnonCookie(
+    NextResponse.rewrite(rewriteUrl, {
+      request: { headers: reqWithAnon.headers },
+    }),
+    forwarded,
+    anonId,
+  );
 });
 
 export const config = {
