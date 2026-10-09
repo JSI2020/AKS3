@@ -53,8 +53,10 @@ COPY --from=builder /app/modules ./modules
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
 COPY --from=builder /app/auth.ts /app/auth.config.ts ./
-COPY --from=builder /app/scripts/docker-entrypoint.sh /app/scripts/docker-entrypoint.sh
+COPY --from=builder /app/scripts ./scripts
+COPY --from=builder /app/i18n ./i18n
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
+COPY --from=builder /app/next.config.ts ./next.config.ts
 
 RUN chmod +x /app/scripts/docker-entrypoint.sh \
   && chown -R nextjs:nodejs /app
