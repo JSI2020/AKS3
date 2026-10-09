@@ -71,7 +71,15 @@ services:
     command: ["app"]
     mem_limit: 768m
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/"]
+      # TCP-only: next-intl may absolute-rewrite `/` to AUTH_URL (HTTPS), which
+      # fails inside the container before DNS/Caddy are correct.
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('net').connect(3000,'127.0.0.1',()=>process.exit(0)).on('error',()=>process.exit(1))",
+        ]
       interval: 15s
       timeout: 5s
       retries: 12
