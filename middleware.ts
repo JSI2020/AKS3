@@ -24,33 +24,6 @@ function withAnonRequest(req: NextRequest, anonId: string): NextRequest {
   return new NextRequest(req, { headers });
 }
 
-/**
- * Behind Caddy the Node server still sees `http://…` even though the client
- * used HTTPS (`x-forwarded-proto`). next-intl then rewrites to an absolute
- * `https://…/en` URL, Next treats that as an external proxy, `/en` redirects
- * back to `/` (localePrefix: never), and the browser/crawler loops forever.
- * Normalize the request URL to the forwarded origin first.
- */
-function withForwardedOrigin(req: NextRequest): NextRequest {
-  const proto = req.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
-  const host = (
-    req.headers.get("x-forwarded-host") ?? req.headers.get("host")
-  )
-    ?.split(",")[0]
-    ?.trim();
-  if (!proto || !host) return req;
-
-  const canonical = req.nextUrl.clone();
-  canonical.protocol = `${proto}:`;
-  canonical.host = host;
-  if (canonical.href === req.nextUrl.href) return req;
-
-  return new NextRequest(canonical, {
-    headers: req.headers,
-    method: req.method,
-  });
-}
-
 function stampAnonCookie(
   res: NextResponse,
   req: NextRequest,
@@ -81,14 +54,17 @@ function launchGated(): boolean {
 }
 
 /**
- * Admin: Auth.js JWT gate (matcher historically `/admin` only).
- * Storefront: next-intl (English-only, no locale prefix).
+ * Admin: Auth.js JWT gate.
+ * Storefront: English-only, no locale prefix (rewrite into `/en/*` internally).
+ *
+ * Important: rewrites MUST stay on the same origin as `req.nextUrl` (the
+ * internal `http://…` URL Node sees behind Caddy). Rewriting to an absolute
+ * `https://www…/en` is treated as an external proxy and creates a / ↔ /en loop.
  */
 export default auth((req) => {
-  const forwarded = withForwardedOrigin(req);
-  const { pathname } = forwarded.nextUrl;
-  const anonId = ensureAnonId(forwarded);
-  const reqWithAnon = withAnonRequest(forwarded, anonId);
+  const { pathname } = req.nextUrl;
+  const anonId = ensureAnonId(req);
+  const reqWithAnon = withAnonRequest(req, anonId);
 
   if (
     launchGated() &&
@@ -97,13 +73,13 @@ export default auth((req) => {
     !pathname.startsWith("/auth") &&
     pathname !== "/coming-soon"
   ) {
-    const url = forwarded.nextUrl.clone();
+    const url = req.nextUrl.clone();
     url.pathname = "/coming-soon";
     return stampAnonCookie(
       NextResponse.rewrite(url, {
         request: { headers: reqWithAnon.headers },
       }),
-      forwarded,
+      req,
       anonId,
     );
   }
@@ -113,28 +89,28 @@ export default auth((req) => {
     pathname.startsWith("/api") ||
     pathname.startsWith("/auth")
   ) {
-    return stampAnonCookie(NextResponse.next({
-      request: { headers: reqWithAnon.headers },
-    }), forwarded, anonId);
+    return stampAnonCookie(
+      NextResponse.next({
+        request: { headers: reqWithAnon.headers },
+      }),
+      req,
+      anonId,
+    );
   }
 
-  // localePrefix: "never" — keep rewrites/redirects on the same origin as the
-  // incoming request. next-intl's middleware emits an absolute https:// rewrite
-  // while Node still sees http:// behind Caddy, which Next proxies externally
-  // and turns into a / ↔ /en redirect loop.
   if (pathname === "/en" || pathname.startsWith("/en/")) {
-    const url = forwarded.nextUrl.clone();
+    const url = req.nextUrl.clone();
     url.pathname = pathname.replace(/^\/en/, "") || "/";
-    return stampAnonCookie(NextResponse.redirect(url), forwarded, anonId);
+    return stampAnonCookie(NextResponse.redirect(url), req, anonId);
   }
 
-  const rewriteUrl = forwarded.nextUrl.clone();
+  const rewriteUrl = req.nextUrl.clone();
   rewriteUrl.pathname = pathname === "/" ? "/en" : `/en${pathname}`;
   return stampAnonCookie(
     NextResponse.rewrite(rewriteUrl, {
       request: { headers: reqWithAnon.headers },
     }),
-    forwarded,
+    req,
     anonId,
   );
 });
