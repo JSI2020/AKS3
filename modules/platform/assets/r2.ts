@@ -80,6 +80,13 @@ export async function ensureBucket(client = createR2Client()): Promise<void> {
 }
 
 function isLocalDevStorage(): boolean {
+  // Hetzner fallback when MinIO/R2 images or credentials are unavailable.
+  if (
+    process.env.R2_FORCE_LOCAL === "1" ||
+    process.env.R2_FORCE_LOCAL === "true"
+  ) {
+    return true;
+  }
   if (process.env.NODE_ENV === "production") return false;
   const endpoint = process.env.R2_ENDPOINT ?? "";
   return /127\.0\.0\.1|localhost/.test(endpoint);
