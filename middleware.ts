@@ -27,6 +27,33 @@ function withAnonRequest(req: NextRequest, anonId: string): NextRequest {
   return new NextRequest(req, { headers });
 }
 
+/**
+ * Behind Caddy the Node server still sees `http://…` even though the client
+ * used HTTPS (`x-forwarded-proto`). next-intl then rewrites to an absolute
+ * `https://…/en` URL, Next treats that as an external proxy, `/en` redirects
+ * back to `/` (localePrefix: never), and the browser/crawler loops forever.
+ * Normalize the request URL to the forwarded origin first.
+ */
+function withForwardedOrigin(req: NextRequest): NextRequest {
+  const proto = req.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const host = (
+    req.headers.get("x-forwarded-host") ?? req.headers.get("host")
+  )
+    ?.split(",")[0]
+    ?.trim();
+  if (!proto || !host) return req;
+
+  const canonical = req.nextUrl.clone();
+  canonical.protocol = `${proto}:`;
+  canonical.host = host;
+  if (canonical.href === req.nextUrl.href) return req;
+
+  return new NextRequest(canonical, {
+    headers: req.headers,
+    method: req.method,
+  });
+}
+
 function stampAnonCookie(
   res: NextResponse,
   req: NextRequest,
@@ -61,9 +88,10 @@ function launchGated(): boolean {
  * Storefront: next-intl (English-only, no locale prefix).
  */
 export default auth((req) => {
-  const { pathname } = req.nextUrl;
-  const anonId = ensureAnonId(req);
-  const reqWithAnon = withAnonRequest(req, anonId);
+  const forwarded = withForwardedOrigin(req);
+  const { pathname } = forwarded.nextUrl;
+  const anonId = ensureAnonId(forwarded);
+  const reqWithAnon = withAnonRequest(forwarded, anonId);
 
   if (
     launchGated() &&
@@ -72,13 +100,13 @@ export default auth((req) => {
     !pathname.startsWith("/auth") &&
     pathname !== "/coming-soon"
   ) {
-    const url = req.nextUrl.clone();
+    const url = forwarded.nextUrl.clone();
     url.pathname = "/coming-soon";
     return stampAnonCookie(
       NextResponse.rewrite(url, {
         request: { headers: reqWithAnon.headers },
       }),
-      req,
+      forwarded,
       anonId,
     );
   }
@@ -90,10 +118,10 @@ export default auth((req) => {
   ) {
     return stampAnonCookie(NextResponse.next({
       request: { headers: reqWithAnon.headers },
-    }), req, anonId);
+    }), forwarded, anonId);
   }
 
-  return stampAnonCookie(intlMiddleware(reqWithAnon), req, anonId);
+  return stampAnonCookie(intlMiddleware(reqWithAnon), forwarded, anonId);
 });
 
 export const config = {
