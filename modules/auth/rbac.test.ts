@@ -1,4 +1,4 @@
-import { eq, inArray, like } from "drizzle-orm";
+import { and, eq, inArray, isNull, like, notLike } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -71,6 +71,35 @@ async function seedCatalogue(): Promise<void> {
   }
 }
 
+/**
+ * Real installs always have an OWNER (created at bootstrap), and the
+ * `enforce_owner_invariants` trigger refuses to delete the last one. On a
+ * fresh CI database the OWNER fixtures would be that last one, so make sure a
+ * non-fixture owner exists first — a no-op wherever one already does.
+ */
+async function ensureStandingOwner(): Promise<void> {
+  const [existing] = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(
+      and(
+        eq(users.role, "OWNER"),
+        eq(users.status, "ACTIVE"),
+        isNull(users.deletedAt),
+        notLike(users.email, "%@example.com"),
+      ),
+    )
+    .limit(1);
+  if (existing) return;
+  await db.insert(users).values({
+    id: uuidv7(),
+    email: "rbac-standing-owner@aks.test",
+    name: "Standing owner (test DB)",
+    role: "OWNER",
+    status: "ACTIVE",
+  });
+}
+
 async function cleanupTestUsers(): Promise<void> {
   const fixtures = await db
     .select({ id: users.id })
@@ -93,6 +122,7 @@ async function cleanupTestUsers(): Promise<void> {
 describe("RBAC", () => {
   beforeAll(async () => {
     await seedCatalogue();
+    await ensureStandingOwner();
   });
 
   beforeEach(async () => {

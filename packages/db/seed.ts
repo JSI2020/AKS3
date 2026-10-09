@@ -284,18 +284,22 @@ async function seed() {
     length.gradeOverrides ?? {},
   );
 
-  const expectedBust = [32, 34, 36, 38, 41, 44].map(inches);
-  const expectedLength = [28, 29, 30, 31, 32, 33].map(inches);
-  if (JSON.stringify(bustResolved) !== JSON.stringify(expectedBust)) {
-    throw new Error(
-      `KAMEEZ BUST resolve mismatch: got ${bustResolved.join("/")} expected ${expectedBust.join("/")}`,
-    );
-  }
-  if (JSON.stringify(lengthResolved) !== JSON.stringify(expectedLength)) {
-    throw new Error(
-      `KAMEEZ LENGTH resolve mismatch: got ${lengthResolved.join("/")} expected ${expectedLength.join("/")}`,
-    );
-  }
+  // The house chart values are owner-maintained (size-block-seeds.ts), so
+  // check shape, not specific numbers: every size resolves to a positive
+  // value and no size is smaller than the one before it (lengths often hold
+  // across neighbouring sizes).
+  const assertGraded = (label: string, values: number[]) => {
+    const ok =
+      values.length === STANDARD_SIZE_LABELS.length &&
+      values.every((v, i) => v > 0 && (i === 0 || v >= values[i - 1]!));
+    if (!ok) {
+      throw new Error(
+        `KAMEEZ ${label} resolve is not a positive, non-decreasing grade: ${values.join("/")}`,
+      );
+    }
+  };
+  assertGraded("BUST", bustResolved);
+  assertGraded("LENGTH", lengthResolved);
   console.log(
     `KAMEEZ resolve OK — BUST ${bustResolved.map((v) => v / 100).join("/")} · LENGTH ${lengthResolved.map((v) => v / 100).join("/")}`,
   );
