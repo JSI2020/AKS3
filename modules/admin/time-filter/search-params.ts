@@ -6,9 +6,13 @@ import {
 
 import { TIME_RANGE_PRESETS } from "./time-range";
 
+/** Base range parser (nullable, no default) — the supertype that both the
+ *  defaulted variant and a page's opt-in (no-default) range satisfy. */
+export const rangeBaseParser = parseAsStringLiteral(TIME_RANGE_PRESETS);
+
 /** Shared URL keys for analysis time filters. */
 export const timeRangeParsers = {
-  range: parseAsStringLiteral(TIME_RANGE_PRESETS).withDefault("month"),
+  range: rangeBaseParser.withDefault("month"),
   from: parseAsString,
   to: parseAsString,
 };
