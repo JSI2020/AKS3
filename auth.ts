@@ -99,7 +99,7 @@ function aksAuthAdapter(): Adapter {
       return base.createUser!({ ...data, id: uuidv7() });
     },
     async linkAccount(account) {
-      return base.linkAccount!({
+      await base.linkAccount!({
         ...account,
         id: uuidv7(),
       } as Parameters<NonNullable<Adapter["linkAccount"]>>[0]);
