@@ -43,6 +43,7 @@ export type CatalogueRenderSpec = {
   assetId: string;
   altText: string;
   sortOrder?: number;
+  isAiGenerated?: boolean;
 };
 
 export type CreatePublishedCatalogueDesignInput = {
@@ -194,7 +195,7 @@ export async function createPublishedCatalogueDesign(
           angle: spec.angle,
           archetypeId: null,
           assetId: spec.assetId,
-          isAiGenerated: false,
+          isAiGenerated: Boolean(spec.isAiGenerated),
           altText: spec.altText,
           sortOrder: spec.sortOrder ?? index,
         };

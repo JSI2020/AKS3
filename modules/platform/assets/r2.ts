@@ -201,6 +201,19 @@ export async function createPresignedReadUrl(
   const localUrl = localPublicAssetUrl(key);
   if (localUrl) return localUrl;
 
+  // Private MinIO (Hetzner): browsers cannot hit minio:9000. Serve via the app.
+  const serveViaApp =
+    process.env.R2_SERVE_VIA_APP === "1" ||
+    process.env.R2_SERVE_VIA_APP === "true";
+  if (serveViaApp) {
+    const base =
+      process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ??
+      process.env.AUTH_URL?.replace(/\/$/, "") ??
+      "";
+    const path = `/api/assets/serve?key=${encodeURIComponent(key)}`;
+    return base ? `${base}${path}` : path;
+  }
+
   const client = createR2Client();
   const command = new GetObjectCommand({
     Bucket: getBucket(),

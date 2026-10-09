@@ -36,6 +36,7 @@
     "launch:4": "tsx scripts/launch/step-4-content.ts",
     "launch:5": "tsx scripts/launch/step-5-verify.ts",
     "launch:all": "npm run launch:1 && npm run launch:2 && npm run launch:3 && npm run launch:4 && npm run launch:5",
+    "launch:ai-catalogue": "tsx scripts/launch/ai-catalogue-pipeline.ts",
     "db:wipe": "tsx scripts/db-wipe-all-data.ts",
     "db:post-wipe": "tsx scripts/db-post-wipe-setup.ts",
     "preflight:production": "tsx scripts/preflight-production.ts",

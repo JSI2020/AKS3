@@ -61,10 +61,14 @@ services:
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://www.aks-atelier.com}
       NODE_ENV: production
       AKS_ALLOW_DEV_OTP: "0"
+      R2_ENDPOINT: http://minio:9000
+      R2_SERVE_VIA_APP: "1"
     depends_on:
       postgres:
         condition: service_healthy
       migrate:
+        condition: service_completed_successfully
+      minio-init:
         condition: service_completed_successfully
     expose:
       - "3000"
@@ -96,13 +100,52 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-aks}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-aks}
       NODE_ENV: production
       OUTBOX_POLL_MS: "500"
+      R2_ENDPOINT: http://minio:9000
+      R2_SERVE_VIA_APP: "1"
     depends_on:
       postgres:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
     command: ["worker"]
     mem_limit: 256m
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-aksminio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-aksminiosecret}
+    volumes:
+      - aks_minio_data:/data
+    expose:
+      - "9000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    mem_limit: 256m
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 $${MINIO_ROOT_USER:-aksminio} $${MINIO_ROOT_PASSWORD:-aksminiosecret} &&
+      mc mb -p local/$${R2_BUCKET:-aks-assets} || true &&
+      mc anonymous set download local/$${R2_BUCKET:-aks-assets} || true
+      "
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-aksminio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-aksminiosecret}
+      R2_BUCKET: ${R2_BUCKET:-aks-assets}
+    restart: "no"
 
   caddy:
     image: caddy:2-alpine
@@ -121,5 +164,6 @@ services:
 
 volumes:
   aks_pg_data:
+  aks_minio_data:
   caddy_data:
   caddy_config:

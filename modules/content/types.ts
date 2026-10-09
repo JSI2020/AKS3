@@ -29,7 +29,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsPublic = {
   shippingMode: "FREE_PAKISTAN",
   shippingFlatMinor: 0,
   shippingPromise: "Free shipping within Pakistan",
-  whatsappUrl: "https://wa.me/923001234567",
+  whatsappUrl: "https://wa.me/923378520110",
   instagramUrl: "https://instagram.com/aks.atelier",
   newsletterEnabled: true,
   brandName: "AKS",
