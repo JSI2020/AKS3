@@ -23,14 +23,15 @@ const nextConfig: NextConfig = {
   // Required for the multi-stage Dockerfile (`.next/standalone`).
   output: "standalone",
   experimental: {
-    // Behind Caddy, Node sees http://0.0.0.0:3000 while middleware rewrites
-    // use https://www…. Without this, Next treats those rewrites as external
-    // and proxies back through Caddy → redirect loop on `/`.
-    trustHostHeader: true,
     // Garment photos for size recognition are uploaded through a Server Action.
     serverActions: {
       bodySizeLimit: "12mb",
     },
+    // Behind Caddy, Node sees http://0.0.0.0:3000 while middleware rewrites
+    // use https://www…. Without this, Next treats those rewrites as external
+    // and proxies back through Caddy → redirect loop on `/`.
+    // Still read by resolve-routes in 15.5; dropped from ExperimentalConfig types.
+    ...( { trustHostHeader: true } as Record<string, unknown> ),
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
