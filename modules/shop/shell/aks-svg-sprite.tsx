@@ -111,6 +111,12 @@ export function AksSvgSprite() {
             stroke="none"
           />
         </symbol>
+        <symbol id="ic-facebook" viewBox="0 0 24 24">
+          <path d="M14 9h3V6h-3c-2.2 0-4 1.8-4 4v2H8v3h2v7h3v-7h2.6L16 12h-3v-2c0-.6.4-1 1-1z" />
+        </symbol>
+        <symbol id="ic-tiktok" viewBox="0 0 24 24">
+          <path d="M16.5 4c.4 2.1 1.8 3.7 3.9 4.1v2.5c-1.4-.1-2.7-.6-3.9-1.4v6.2c0 3.3-2.6 5.9-5.9 5.9S4.7 18.7 4.7 15.4 7.3 9.5 10.6 9.5c.3 0 .6 0 .9.1v2.7c-.3-.1-.6-.1-.9-.1-1.8 0-3.2 1.5-3.2 3.2s1.4 3.2 3.2 3.2 3.2-1.4 3.2-3.2V4h2.7z" />
+        </symbol>
         <symbol id="ic-arrow" viewBox="0 0 24 24">
           <line x1="4" y1="12" x2="18.5" y2="12" />
           <path d="M12.5 6 L18.5 12 L12.5 18" />

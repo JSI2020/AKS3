@@ -14,6 +14,8 @@ export type SiteSettingsPublic = {
   shippingPromise: string;
   whatsappUrl: string;
   instagramUrl: string;
+  facebookUrl: string;
+  tiktokUrl: string;
   newsletterEnabled: boolean;
   brandName: string;
   brandNameUr: string;
@@ -30,7 +32,9 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsPublic = {
   shippingFlatMinor: 0,
   shippingPromise: "Free shipping within Pakistan",
   whatsappUrl: "https://wa.me/923378520110",
-  instagramUrl: "https://instagram.com/aks.atelier",
+  instagramUrl: "https://www.instagram.com/aksatelier.official/",
+  facebookUrl: "https://www.facebook.com/profile.php?id=61594255361658",
+  tiktokUrl: "https://www.tiktok.com/@aksatelier.official",
   newsletterEnabled: true,
   brandName: "AKS",
   brandNameUr: "عکس",

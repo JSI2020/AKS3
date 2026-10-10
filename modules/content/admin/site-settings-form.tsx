@@ -185,6 +185,30 @@ export function SiteSettingsForm({
             }
           />
         </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-[0.1em] text-ink/55">
+            Facebook
+          </span>
+          <input
+            className="border border-ink/12 bg-greige px-3 py-2 text-[13px] text-ink outline-none focus:border-ink"
+            value={form.facebookUrl}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, facebookUrl: e.target.value }))
+            }
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-[0.1em] text-ink/55">
+            TikTok
+          </span>
+          <input
+            className="border border-ink/12 bg-greige px-3 py-2 text-[13px] text-ink outline-none focus:border-ink"
+            value={form.tiktokUrl}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, tiktokUrl: e.target.value }))
+            }
+          />
+        </label>
         <div className="flex flex-col gap-1">
           <span className="text-[10px] uppercase tracking-[0.1em] text-ink/55">
             Newsletter signup

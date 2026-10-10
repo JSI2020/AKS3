@@ -283,11 +283,14 @@ async function main() {
         ...DEFAULT_SITE_SETTINGS,
         ...current,
         whatsappUrl: "https://wa.me/923378520110",
+        instagramUrl: "https://www.instagram.com/aksatelier.official/",
+        facebookUrl: "https://www.facebook.com/profile.php?id=61594255361658",
+        tiktokUrl: "https://www.tiktok.com/@aksatelier.official",
       },
       updatedAt: new Date(),
     })
     .where(eq(siteSettings.key, "storefront"));
-  console.log("storefront whatsappUrl → https://wa.me/923378520110");
+  console.log("storefront socials → WhatsApp, Instagram, Facebook, TikTok");
 
   const existingAnn = await db.select().from(announcements);
   const comingSoonMsg =

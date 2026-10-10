@@ -150,7 +150,10 @@ export async function ShopFooter() {
             {t("footerNewsletterLead")}
           </p>
           {settings.newsletterEnabled ? <FooterNewsletter /> : null}
-          {settings.whatsappUrl || settings.instagramUrl ? (
+          {settings.whatsappUrl ||
+          settings.instagramUrl ||
+          settings.facebookUrl ||
+          settings.tiktokUrl ? (
             <div className="social">
               {settings.whatsappUrl ? (
                 <a
@@ -176,6 +179,32 @@ export async function ShopFooter() {
                     <use href="#ic-instagram" />
                   </svg>
                   {t("instagram")}
+                </a>
+              ) : null}
+              {settings.facebookUrl ? (
+                <a
+                  href={settings.facebookUrl}
+                  rel="noreferrer"
+                  target="_blank"
+                  aria-label={t("facebook")}
+                >
+                  <svg className="ico" viewBox="0 0 24 24" aria-hidden="true">
+                    <use href="#ic-facebook" />
+                  </svg>
+                  {t("facebook")}
+                </a>
+              ) : null}
+              {settings.tiktokUrl ? (
+                <a
+                  href={settings.tiktokUrl}
+                  rel="noreferrer"
+                  target="_blank"
+                  aria-label={t("tiktok")}
+                >
+                  <svg className="ico" viewBox="0 0 24 24" aria-hidden="true">
+                    <use href="#ic-tiktok" />
+                  </svg>
+                  {t("tiktok")}
                 </a>
               ) : null}
             </div>
